@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 1500
+#define SCREEN_HEIGHT 500
 
 int debug = 0;
 
@@ -45,7 +45,7 @@ unsigned int mandelbrot_test(double x, double y, unsigned int max_iter) {
         iterations++;
 
         if (a == new_a && b == new_b) {
-            break;
+            return max_iter;
         }
 
         a = new_a;
@@ -97,15 +97,15 @@ void mandelbrot_calculate (double zoom) {
 
 //    tuple *tuplerow = pnm_allocpamrow(&outpam);
 
-    double y = origin_y;
-    double x_delta = aspect / (width_px * zoom);
-    double y_delta = (double) 1 / (height_px * zoom);
+    double x_delta = (double) width / width_px;
+    double y_delta = (double) height / height_px;
 
     if (debug) {
         printf("Center at (%f, %f), origin at (%f, %f), at a zoom of (%f) and height/width/aspect of (%f, %f, %f)",
                center_x, center_y, origin_x, origin_y, zoom, height, width, aspect);
     }
 
+    double y = origin_y;
     for (unsigned int row = 0; row < height_px; ++row) {
         double x = origin_x;
 
@@ -207,6 +207,7 @@ void do_input(void) {
 }
 
 int main(int argc, char **argv) {
+
     colors = malloc((max_iter+1) * sizeof(unsigned int));
     for (int i = 0; i < max_iter; i++) {
 //        colors[i] = malloc(3 * sizeof(int));
@@ -223,14 +224,14 @@ int main(int argc, char **argv) {
 
     atexit(cleanup);
 
-    double zoom = 0.5;
+    double zoom = 1;
     while (1) {
         prepare_scene(zoom);
         do_input();
         present_scene();
 
-        zoom++;
-        SDL_Delay(10);
+        zoom *= 2;
+        SDL_Delay(100);
     }
 }
 
