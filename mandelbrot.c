@@ -13,6 +13,9 @@ typedef struct {
     SDL_Renderer *renderer;
     SDL_Window *window;
     SDL_Texture *texture;
+
+    void* pixels;
+    int pitch;
 } App;
 
 App app;
@@ -61,7 +64,7 @@ unsigned int mandelbrot_test(double x, double y, unsigned int max_iter) {
 }
 
 
-void mandelbrot_calculate (int* pixels, double zoom) {
+void mandelbrot_calculate (double zoom) {
 
     const unsigned int width_px = SCREEN_WIDTH;
     const unsigned int height_px = SCREEN_HEIGHT;
@@ -95,7 +98,7 @@ void mandelbrot_calculate (int* pixels, double zoom) {
 //    tuple *tuplerow = pnm_allocpamrow(&outpam);
 
     double y = origin_y;
-    double x_delta = (double) aspect / (width_px * zoom);
+    double x_delta = aspect / (width_px * zoom);
     double y_delta = (double) 1 / (height_px * zoom);
 
     if (debug) {
@@ -108,7 +111,7 @@ void mandelbrot_calculate (int* pixels, double zoom) {
 
         for (unsigned int column = 0; column < width_px; ++column) {
             unsigned long iterations = mandelbrot_test(x, y, max_iter);
-            pixels[row * SCREEN_WIDTH + column] = colors[iterations];
+            ((int*)app.pixels)[row * SCREEN_WIDTH + column] = colors[iterations];
             x += x_delta;
         }
         y -= y_delta;
@@ -154,10 +157,15 @@ void init_SDL() {
         exit(1);
     }
 
+//    app.pixels = malloc(sizeof(void*));
+//    app.pitch = malloc(sizeof(int));
 }
 
 void cleanup(void) {
     free(colors);
+
+//    free(app.pixels);
+//    free(app.pitch);
 
     SDL_DestroyRenderer(app.renderer);
     SDL_DestroyWindow(app.window);
@@ -166,29 +174,11 @@ void cleanup(void) {
 }
 
 void prepare_scene(double zoom) {
-    void **pixels = malloc(sizeof(void*));
-    int *pitch = malloc(sizeof(int));
-//    if (app.texture) {
-//        printf("tex");
-//        Uint32* fmt = malloc(sizeof(Uint32));
-//        int* access = malloc(sizeof(int));
-//        int* w = malloc(sizeof(int));
-//        int* h = malloc(sizeof(int));
-//        SDL_QueryTexture(app.texture, fmt, access, w, h);
-//        printf("gh");
-//    }
-    SDL_LockTexture(app.texture, NULL, pixels, pitch);
-    mandelbrot_calculate(*pixels, zoom);
-//    for (int y = 0; y < SCREEN_HEIGHT; y++) {
-//        for (int x = 0; x < SCREEN_WIDTH; x++) {
-//            ((int*)*pixels)[y * SCREEN_WIDTH + x] = 0xffffffff;
-//        }
-//    }
-//    printf("Pitch of texture is %d\n", *pitch);
-//    printf("Pixel at position 240, 3 has value %d\n", ((int*)(*pixels))[2*SCREEN_WIDTH+240]);
+
+
+    SDL_LockTexture(app.texture, NULL, &(app.pixels), &(app.pitch));
+    mandelbrot_calculate(zoom);
     SDL_UnlockTexture(app.texture);
-    free(pixels);
-    free(pitch);
 
 //    SDL_SetRenderDrawColor(app.renderer, 34, 155, 200, 70);
 
@@ -239,8 +229,8 @@ int main(int argc, char **argv) {
         do_input();
         present_scene();
 
-        zoom *= 2;
-        SDL_Delay(100);
+        zoom++;
+        SDL_Delay(10);
     }
 }
 
