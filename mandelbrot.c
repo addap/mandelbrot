@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 
-#define SCREEN_WIDTH 1500
-#define SCREEN_HEIGHT 500
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
 
 int debug = 0;
 
@@ -14,7 +14,7 @@ typedef struct {
     SDL_Window *window;
     SDL_Texture *texture;
 
-    void* pixels;
+    unsigned char* pixels;
     int pitch;
 } App;
 
@@ -122,18 +122,15 @@ void mandelbrot_calculate (double zoom) {
 
 void init_SDL() {
 
-    Uint32 rendererFlags, windowFlags;
-
-    rendererFlags = SDL_RENDERER_ACCELERATED;
-
-    windowFlags = 0;
+    Uint32 rendererFlags = SDL_RENDERER_ACCELERATED;
+    Uint32 windowFlags = 0;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Couldn't initialize SDL: %s\n", SDL_GetError());
         exit(1);
     }
 
-    app.window = SDL_CreateWindow("Shooter 01", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
+    app.window = SDL_CreateWindow("Mandelbrot", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
                                   SCREEN_HEIGHT, windowFlags);
 
     if (!app.window) {
@@ -148,6 +145,13 @@ void init_SDL() {
     if (!app.renderer) {
         printf("Failed to create renderer: %s\n", SDL_GetError());
         exit(1);
+    }
+
+    if (debug) {
+        SDL_RendererInfo rendererInfo;
+        SDL_GetRendererInfo(app.renderer, &rendererInfo);
+        printf("%s\n", rendererInfo.name);
+        printf("%s\n", SDL_GetCurrentVideoDriver());
     }
 
     app.texture = SDL_CreateTexture(app.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -176,7 +180,7 @@ void cleanup(void) {
 void prepare_scene(double zoom) {
 
 
-    SDL_LockTexture(app.texture, NULL, &(app.pixels), &(app.pitch));
+    SDL_LockTexture(app.texture, NULL, (void**)&(app.pixels), &(app.pitch));
     mandelbrot_calculate(zoom);
     SDL_UnlockTexture(app.texture);
 
