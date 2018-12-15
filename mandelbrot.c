@@ -1,241 +1,214 @@
-
-#include <netpbm/pam.h>
+#include "include/glad/glad.h"
+#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL2/SDL.h>
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+const char *vertexShaderSource =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "}";
+/*
+const char *fragmentShaderSource =
+        "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "}";*/
 
-int debug = 0;
+const char *fragmentShaderSource =
+        "#version 330 core\n"
+        "out vec4 fragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    float aspect = 800.0 / 600.0;\n"
+        "    float width = 2.0;\n"
+        "    float height = aspect * width;\n"
+        "    \n"
+        "    vec2 xy = gl_FragCoord.xy;\n"
+        "    \n"
+        "    xy.x = xy.x / 800.0;\n"
+        "    xy.y = xy.y / 600.0;\n"
+        "    \n"
+        "    float center_x = 0.3750001200618655;\n"
+        "    float center_y = -0.2166393884377127;\n"
+        "    \n"
+        "    float origin_x = center_x - 0.5 * width;\n"
+        "    float origin_y = center_y - 0.5 * height;\n"
+        "    \n"
+        "    xy.x = width * xy.x + origin_x;\n"
+        "    xy.y = height * xy.y + origin_y;\n"
+        "    \n"
+        "    float a, b = 0.0;\n"
+        "    float new_a, new_b = 0.0;\n"
+        "    float iteration = 0.0;\n"
+        "    float max_iter = 100.0;\n"
+        "    \n"
+        "    while (a * a + b * b <= 4.0 && iteration < max_iter) {\n"
+        "        new_a = a * a - b * b + xy.x;\n"
+        "        new_b = 2.0 * a * b + xy.y;\n"
+        "        \n"
+        "        iteration++;\n"
+        "        a = new_a;\n"
+        "        b = new_b;\n"
+        "    }\n"
+        "    \n"
+        "    if (iteration == max_iter) {\n"
+        "        fragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"
+        "    } else {\n"
+        "        fragColor = vec4(iteration / max_iter, 1.0 - iteration / max_iter, 0.7, 1.0);\n"
+        "    }\n"
+        "}";
 
-typedef struct {
-    SDL_Renderer *renderer;
-    SDL_Window *window;
-    SDL_Texture *texture;
-
-    unsigned char* pixels;
-    int pitch;
-} App;
-
-App app;
-
-
-const unsigned int max_iter = 100;
-const unsigned int max_color_value = 255;
-unsigned int* colors;
-
-/* returns the number of iterations until c = x + iy diverges, max_iter if it does not diverge
- */
-unsigned int mandelbrot_test(double x, double y, unsigned int max_iter) {
-    //todo check if pixel is in one of the large circles. Only speeds up initial calculations
-    double a = 0;
-    double b = 0;
-    double new_a = 0;
-    double new_b = 0;
-
-    if (debug) {
-        printf("Called with (%f, %f)\n", x, y);
-    }
-
-    unsigned int iterations = 0;
-    while (new_a * new_a + new_b * new_b < 4 && iterations < max_iter) {
-        new_a = a * a - b * b + x;
-        new_b = 2 * (a * b) + y;
-        iterations++;
-
-        if (a == new_a && b == new_b) {
-            return max_iter;
-        }
-
-        a = new_a;
-        b = new_b;
-    }
-
-    if (debug) {
-        if (iterations < max_iter) {
-            printf("Took %d iterations", iterations);
-        } else {
-            printf("Does not diverge");
-        }
-    }
-
-    return iterations;
-}
-
-
-void mandelbrot_calculate (double zoom) {
-
-    const unsigned int width_px = SCREEN_WIDTH;
-    const unsigned int height_px = SCREEN_HEIGHT;
-
-    const double center_x = -0.7463;
-    const double center_y = 0.1102;
-    // width div height
-    double aspect = (double)width_px / height_px;
-    // modifies with and height
-//    double zoom = 0.5;
-
-    double height = (double) 1 / zoom;
-    double width = aspect * height;
-
-    double origin_x = center_x - (0.5 * width);
-    double origin_y = center_y + (0.5 * height);
-
-//    struct pam outpam;
-//    outpam.format = PPM_FORMAT;
-//    outpam.width = width_px;
-//    outpam.height = height_px;
-//    outpam.depth = 3;
-//    outpam.maxval = max_color_value;
-//    outpam.bytes_per_sample = 3;
-
-//    FILE *f = fopen("./testbild.ppm", "w");
-//    outpam.file = f;
-
-//    pnm_writepaminit(&outpam);
-
-//    tuple *tuplerow = pnm_allocpamrow(&outpam);
-
-    double x_delta = (double) width / width_px;
-    double y_delta = (double) height / height_px;
-
-    if (debug) {
-        printf("Center at (%f, %f), origin at (%f, %f), at a zoom of (%f) and height/width/aspect of (%f, %f, %f)",
-               center_x, center_y, origin_x, origin_y, zoom, height, width, aspect);
-    }
-
-    double y = origin_y;
-    for (unsigned int row = 0; row < height_px; ++row) {
-        double x = origin_x;
-
-        for (unsigned int column = 0; column < width_px; ++column) {
-            unsigned long iterations = mandelbrot_test(x, y, max_iter);
-            ((int*)app.pixels)[row * SCREEN_WIDTH + column] = colors[iterations];
-            x += x_delta;
-        }
-        y -= y_delta;
-//        pnm_writepamrow(&outpam, tuplerow);
-    }
-//    pnm_freepamrow(tuplerow);
-}
-
-void init_SDL() {
-
-    Uint32 rendererFlags = SDL_RENDERER_ACCELERATED;
-    Uint32 windowFlags = 0;
-
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("Couldn't initialize SDL: %s\n", SDL_GetError());
-        exit(1);
-    }
-
-    app.window = SDL_CreateWindow("Mandelbrot", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
-                                  SCREEN_HEIGHT, windowFlags);
-
-    if (!app.window) {
-        printf("Failed to open %d x %d window: %s\n", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_GetError());
-        exit(1);
-    }
-
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-
-    app.renderer = SDL_CreateRenderer(app.window, -1, rendererFlags);
-
-    if (!app.renderer) {
-        printf("Failed to create renderer: %s\n", SDL_GetError());
-        exit(1);
-    }
-
-    if (debug) {
-        SDL_RendererInfo rendererInfo;
-        SDL_GetRendererInfo(app.renderer, &rendererInfo);
-        printf("%s\n", rendererInfo.name);
-        printf("%s\n", SDL_GetCurrentVideoDriver());
-    }
-
-    app.texture = SDL_CreateTexture(app.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    if (!app.texture) {
-        printf("Failed to create texture!");
-        exit(1);
-    }
-
-//    app.pixels = malloc(sizeof(void*));
-//    app.pitch = malloc(sizeof(int));
-}
-
-void cleanup(void) {
-    free(colors);
-
-//    free(app.pixels);
-//    free(app.pitch);
-
-    SDL_DestroyRenderer(app.renderer);
-    SDL_DestroyWindow(app.window);
-    SDL_DestroyTexture(app.texture);
-    SDL_Quit();
-}
-
-void prepare_scene(double zoom) {
-
-
-    SDL_LockTexture(app.texture, NULL, (void**)&(app.pixels), &(app.pitch));
-    mandelbrot_calculate(zoom);
-    SDL_UnlockTexture(app.texture);
-
-//    SDL_SetRenderDrawColor(app.renderer, 34, 155, 200, 70);
-
-    SDL_RenderClear(app.renderer);
-    SDL_RenderCopy(app.renderer, app.texture, NULL, NULL);
+void init() {
 
 }
 
-void present_scene() {
-    SDL_RenderPresent(app.renderer);
+void framebuffer_size_callback(GLFWwindow* window, int height, int width) {
+    glViewport(0, 0, height, width);
 }
 
-void do_input(void) {
-    SDL_Event event;
+void error_handler(int i, const char* err_str) {
+    printf("%d, %s\n", i, err_str);
+}
 
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_QUIT:
-                exit(0);
-                break;
-
-            default:
-                break;
-        }
+void process_input(GLFWwindow *window) {
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, 1);
     }
 }
 
 int main(int argc, char **argv) {
+    glfwSetErrorCallback(error_handler);
 
-    colors = malloc((max_iter+1) * sizeof(unsigned int));
-    for (int i = 0; i < max_iter; i++) {
-//        colors[i] = malloc(3 * sizeof(int));
-        unsigned int r = max_color_value;
-        unsigned int g = max_color_value - ((i * 100) % max_color_value);
-        unsigned int b = (i * 100) % max_color_value;
-        unsigned int a = 0;
-        colors[i] = (r << 24) + (g << 16) + (b << 8) + (a << 0);
+    if (glfwInit() == GLFW_FALSE) {
+        printf("Failed to init glfw");
+        exit(1);
     }
-    colors[max_iter] = 0;
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    memset(&app, 0, sizeof(App));
-    init_SDL();
-
-    atexit(cleanup);
-
-    double zoom = 1;
-    while (1) {
-        prepare_scene(zoom);
-        do_input();
-        present_scene();
-
-        zoom *= 2;
-        SDL_Delay(100);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    if (!window) {
+        printf("Failed to open glfw window");
+        exit(1);
     }
+
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        printf("Failed to load opengl functions");
+        exit(1);
+    }
+
+    glViewport(0, 0, 800, 600);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    // Vertax Array Object
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    float vertices[] = {
+            -1.0f, -1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            -1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f
+    };
+
+    unsigned int indices[] = {
+            0, 1, 2,
+            1, 3, 2
+    };
+
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    //Vertex Shader
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    int success;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+
+    if (success == GL_FALSE) {
+        char *info_log = malloc(512);
+        glGetShaderInfoLog(vertexShader, 512, NULL, info_log);
+        printf("Vertex shader compilation error: %s", info_log);
+    }
+    ///////////////////////
+    // Fragment Shader
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+
+    if (success == GL_FALSE) {
+        char *info_log = malloc(512);
+        glGetShaderInfoLog(fragmentShader, 512, NULL, info_log);
+        printf("Fragment shader compilation error: %s", info_log);
+    }
+    ////////////////////////
+    // Shader Program
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (success == GL_FALSE) {
+        char *info_log = malloc(512);
+        glGetProgramInfoLog(vertexShader, 512, NULL, info_log);
+        printf("Program linking error: %s", info_log);
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    ///////////////////////
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+
+
+    while (!glfwWindowShouldClose(window)) {
+        process_input(window);
+
+        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+        //bind and unbind VAO if I want to draw more than one object
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
+    return 0;
 }
+
+
+
 

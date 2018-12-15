@@ -4,8 +4,18 @@ project(mandelbrot C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(mandelbrot
-        mandelbrot.c)
+        mandelbrot.c
+        glad.c)
 
 target_link_libraries(mandelbrot
-        netpbm
-        SDL2)
+        GL
+        glfw
+        X11
+        pthread
+        Xrandr
+        Xi
+        dl)
+
+target_compile_options(mandelbrot PRIVATE
+        -Wall
+        -Wextra)
