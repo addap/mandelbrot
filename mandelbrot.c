@@ -2,14 +2,18 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
 
 const char *vertexShaderSource =
-        "#version 330 core\n"
+        "#version 400 core\n"
         "layout (location = 0) in vec3 aPos;\n"
         "\n"
         "void main()\n"
         "{\n"
-        "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "    gl_Position = vec4(aPos, 1.0);\n"
         "}";
 /*
 const char *fragmentShaderSource =
@@ -21,53 +25,8 @@ const char *fragmentShaderSource =
         "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
         "}";*/
 
-const char *fragmentShaderSource =
-        "#version 330 core\n"
-        "out vec4 fragColor;\n"
-        "void main()\n"
-        "{\n"
-        "    float aspect = 800.0 / 600.0;\n"
-        "    float width = 2.0;\n"
-        "    float height = aspect * width;\n"
-        "    \n"
-        "    vec2 xy = gl_FragCoord.xy;\n"
-        "    \n"
-        "    xy.x = xy.x / 800.0;\n"
-        "    xy.y = xy.y / 600.0;\n"
-        "    \n"
-        "    float center_x = 0.3750001200618655;\n"
-        "    float center_y = -0.2166393884377127;\n"
-        "    \n"
-        "    float origin_x = center_x - 0.5 * width;\n"
-        "    float origin_y = center_y - 0.5 * height;\n"
-        "    \n"
-        "    xy.x = width * xy.x + origin_x;\n"
-        "    xy.y = height * xy.y + origin_y;\n"
-        "    \n"
-        "    float a, b = 0.0;\n"
-        "    float new_a, new_b = 0.0;\n"
-        "    float iteration = 0.0;\n"
-        "    float max_iter = 100.0;\n"
-        "    \n"
-        "    while (a * a + b * b <= 4.0 && iteration < max_iter) {\n"
-        "        new_a = a * a - b * b + xy.x;\n"
-        "        new_b = 2.0 * a * b + xy.y;\n"
-        "        \n"
-        "        iteration++;\n"
-        "        a = new_a;\n"
-        "        b = new_b;\n"
-        "    }\n"
-        "    \n"
-        "    if (iteration == max_iter) {\n"
-        "        fragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"
-        "    } else {\n"
-        "        fragColor = vec4(iteration / max_iter, 1.0 - iteration / max_iter, 0.7, 1.0);\n"
-        "    }\n"
-        "}";
+const char* fragmentShaderSourceFile = "../mandelbrot.glsl";
 
-void init() {
-
-}
 
 void framebuffer_size_callback(GLFWwindow* window, int height, int width) {
     glViewport(0, 0, height, width);
@@ -83,7 +42,7 @@ void process_input(GLFWwindow *window) {
     }
 }
 
-int main(int argc, char **argv) {
+GLFWwindow* createWindow() {
     glfwSetErrorCallback(error_handler);
 
     if (glfwInit() == GLFW_FALSE) {
@@ -94,7 +53,7 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (!window) {
         printf("Failed to open glfw window");
         exit(1);
@@ -107,36 +66,47 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    return window;
+}
 
-    // Vertax Array Object
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+const char* readFile(const char *file_url) {
+    FILE* file = fopen(file_url, "r");
 
-    float vertices[] = {
-            -1.0f, -1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-            -1.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 0.0f
-    };
+    if (!file) {
+        printf("Could not open file");
+        exit(1);
+    }
 
-    unsigned int indices[] = {
-            0, 1, 2,
-            1, 3, 2
-    };
+    fseek(file, 0, SEEK_END);
 
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    size_t size = (size_t)ftell(file);
+    rewind(file);
+    char* buffer = calloc(1, size + 1);
+    size_t pos = 0;
 
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    if (!buffer) {
+        printf("Could not create buffer");
+    }
 
+    while (1) {
+        if (fread(&(buffer[pos]), size - pos, 1, file)) {
+            // we are finished
+            fclose(file);
+            break;
+        } else {
+            printf("Have to read more");
+            // else we did not read the whole file
+            pos = strlen(buffer);
+            fseek(file, pos, SEEK_SET);
+        }
+
+    }
+    return buffer;
+}
+
+GLuint generateShaderProgram() {
     //Vertex Shader
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -155,6 +125,7 @@ int main(int argc, char **argv) {
     // Fragment Shader
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    const char* fragmentShaderSource = readFile(fragmentShaderSourceFile);
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
@@ -167,7 +138,7 @@ int main(int argc, char **argv) {
     }
     ////////////////////////
     // Shader Program
-    unsigned int shaderProgram;
+    GLuint shaderProgram;
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
@@ -182,23 +153,72 @@ int main(int argc, char **argv) {
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    free(fragmentShaderSource);
     ///////////////////////
+    return shaderProgram;
+}
 
+int main(int argc, char **argv) {
+    // Create window and set context
+    GLFWwindow* window = createWindow();
+    // compile a shader program
+    GLuint shaderProgram = generateShaderProgram();
+
+
+    float vertices[] = {
+            -1.0f, -1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            -1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f
+    };
+
+    unsigned int indices[] = {
+            0, 1, 2,
+            1, 3, 2
+    };
+
+    // Create OpenGL Objects
+    GLuint VAO;
+    GLuint VBO;
+    GLuint EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    // Bind Vertex Array Object to save bindings for VBO and EBO
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // route data in VBO to the Vertex Attribute at location 0 and enable vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    // Ubind the VAO
     glBindVertexArray(0);
 
+    float time = 0.0f;
+    int timeLocation = glGetUniformLocation(shaderProgram, "time");
 
     while (!glfwWindowShouldClose(window)) {
+        time = (float)glfwGetTime();
         process_input(window);
 
-        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+        // Clear Screen
+        glClearColor(0.1f, 0.0f, 0.5f, 0.5f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+        glUniform1f(timeLocation, time);
+
         //bind and unbind VAO if I want to draw more than one object
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glUseProgram(0);
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
