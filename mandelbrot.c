@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
 
 const char *vertexShaderSource =
         "#version 400 core\n"
@@ -15,15 +16,6 @@ const char *vertexShaderSource =
         "{\n"
         "    gl_Position = vec4(aPos, 1.0);\n"
         "}";
-/*
-const char *fragmentShaderSource =
-        "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-        "}";*/
 
 const char* fragmentShaderSourceFile = "../mandelbrot.glsl";
 
@@ -153,7 +145,7 @@ GLuint generateShaderProgram() {
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    free(fragmentShaderSource);
+    free((void*)fragmentShaderSource);
     ///////////////////////
     return shaderProgram;
 }
@@ -201,19 +193,45 @@ int main(int argc, char **argv) {
     // Ubind the VAO
     glBindVertexArray(0);
 
-    float time = 0.0f;
-    int timeLocation = glGetUniformLocation(shaderProgram, "time");
+    double time = 0.0f;
+    double zoom = 1.0f;
+    double x_pos = (float)SCREEN_WIDTH / 2;
+    double x_pos_new, x_pos_scaled;
+    double y_pos = (float)SCREEN_HEIGHT / 2;
+    double y_pos_new, y_pos_scaled;
+    int moved;
+
+    double height, width;
+    double aspect = (double)SCREEN_WIDTH / SCREEN_HEIGHT;
+    GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
+
+    GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
+    glUseProgram(shaderProgram);
+    glUniform2f(screen_location, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT);
+    glUseProgram(0);
+
+    double center_x = 0;
+    double center_y = 0;
+    GLint center_location = glGetUniformLocation(shaderProgram, "center");
+
+    int pressed = 0;
+    int zoomed = 0;
 
     while (!glfwWindowShouldClose(window)) {
-        time = (float)glfwGetTime();
-        process_input(window);
+        time = glfwGetTime();
+        zoom = exp2(time / 4);
+        height = 2.0 / zoom;
+        width = aspect * height;
+
 
         // Clear Screen
-        glClearColor(0.1f, 0.0f, 0.5f, 0.5f);
+        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
-        glUniform1f(timeLocation, time);
+        // now push it to the shader
+        glUniform2f(wh_location, (float)width, (float)height);
+        glUniform2f(center_location, (float)center_x, (float)center_y);
 
         //bind and unbind VAO if I want to draw more than one object
         glBindVertexArray(VAO);
@@ -223,6 +241,38 @@ int main(int argc, char **argv) {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+        process_input(window);
+
+        /// CALC NEW CENTER
+        // get new cursor position
+        moved = 0;
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+            if (!pressed) {
+                pressed = 1;
+
+                glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
+                if (x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT) {
+                    x_pos = x_pos_new;
+                    y_pos = y_pos_new;
+
+                    // scale to screen coordinates
+                    x_pos_scaled = x_pos / SCREEN_WIDTH;
+                    y_pos_scaled = y_pos / SCREEN_HEIGHT;
+
+                    // make relative to center
+                    x_pos_scaled = x_pos_scaled - 0.5f;
+                    y_pos_scaled = y_pos_scaled - 0.5f;
+
+                    // calculate next center
+                    center_x = x_pos_scaled * width + center_x;
+                    center_y = - y_pos_scaled * height + center_y;
+                }
+//            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
+//            printf("WINDOWCursor is at %lf, %lf\n", x_pos, y_pos);
+            }
+        } else {
+            pressed = 0;
+        }
     }
 
     glfwTerminate();

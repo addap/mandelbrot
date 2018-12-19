@@ -2,28 +2,27 @@
 
 out vec4 fragColor;
 
-uniform float time;
+uniform vec2 center;
+uniform vec2 wh;
+uniform vec2 screen;
 
 void main()
 {
-    double zoom = exp2(time);
-    double aspect = 800.0 / 600.0;
-    double width = 2.0 / zoom;
-    double height = aspect * width;
-    
-    dvec2 xy = gl_FragCoord.xy;
-    
-    xy.x = xy.x / 800.0;
-    xy.y = xy.y / 600.0;
-    
-    double center_x = 0.3750001200618655;
-    double center_y = -0.2166393884377127;
-    
-    double origin_x = center_x - 0.5 * width;
-    double origin_y = center_y - 0.5 * height;
-    
-    xy.x = width * xy.x + origin_x;
-    xy.y = height * xy.y + origin_y;
+    vec2 xy = gl_FragCoord.xy;
+
+    xy.x = xy.x / screen.x;
+    xy.y = xy.y / screen.y;
+
+    //double center_x = 0.3750001200618655;
+    //double center_y = -0.2166393884377127;
+
+    //double origin_x = center_x - 0.5 * width;
+    //double origin_y = center_y - 0.5 * height;
+
+    vec2 halfs = vec2(0.5, 0.5);
+    xy = wh * (xy - halfs) + center;
+    //xy.x = width * xy.x + origin_x;
+    //xy.y = height * xy.y + origin_y;
     
     double a = 0.0;
     double b = 0.0;

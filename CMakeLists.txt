@@ -14,6 +14,7 @@ target_link_libraries(mandelbrot
         pthread
         Xrandr
         Xi
+        m
         dl)
 
 target_compile_options(mandelbrot PRIVATE
