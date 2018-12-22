@@ -1,189 +1,66 @@
-#include "include/glad/glad.h"
-#include <GLFW/glfw3.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include "mandelbrot.h"
 
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
+Properties properties = {
+        .zoom_scale = 1.0f,
+        .x_pos = 0.0f,
+        .y_pos = 0.0f
+};
 
-const char *vertexShaderSource =
-        "#version 400 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "    gl_Position = vec4(aPos, 1.0);\n"
-        "}";
+int pressed_states[3];
+int UP_STATE = 0;
+int DOWN_STATE = 1;
+int E_STATE = 2;
 
-const char* fragmentShaderSourceFile = "../mandelbrot.glsl";
-
-
-void framebuffer_size_callback(GLFWwindow* window, int height, int width) {
-    glViewport(0, 0, height, width);
-}
-
-void error_handler(int i, const char* err_str) {
-    printf("%d, %s\n", i, err_str);
-}
+float zoom_speed = 0.0;
 
 void process_input(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, 1);
     }
-}
-
-GLFWwindow* createWindow() {
-    glfwSetErrorCallback(error_handler);
-
-    if (glfwInit() == GLFW_FALSE) {
-        printf("Failed to init glfw");
-        exit(1);
-    }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (!window) {
-        printf("Failed to open glfw window");
-        exit(1);
-    }
-
-    glfwMakeContextCurrent(window);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        printf("Failed to load opengl functions");
-        exit(1);
-    }
-
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    return window;
-}
-
-const char* readFile(const char *file_url) {
-    FILE* file = fopen(file_url, "r");
-
-    if (!file) {
-        printf("Could not open file");
-        exit(1);
-    }
-
-    fseek(file, 0, SEEK_END);
-
-    size_t size = (size_t)ftell(file);
-    rewind(file);
-    char* buffer = calloc(1, size + 1);
-    size_t pos = 0;
-
-    if (!buffer) {
-        printf("Could not create buffer");
-    }
-
-    while (1) {
-        if (fread(&(buffer[pos]), size - pos, 1, file)) {
-            // we are finished
-            fclose(file);
-            break;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && !pressed_states[UP_STATE]) {
+        if (zoom_speed <= 10.0) {
+            zoom_speed++;
         } else {
-            printf("Have to read more");
-            // else we did not read the whole file
-            pos = strlen(buffer);
-            fseek(file, pos, SEEK_SET);
+            zoom_speed = 10;
         }
-
+        pressed_states[UP_STATE] = 1;
+    } else {
+        pressed_states[UP_STATE] = 0;
     }
-    return buffer;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !pressed_states[DOWN_STATE]) {
+        if (zoom_speed >= 1) {
+            zoom_speed++;
+        } else {
+            zoom_speed = 10;
+        }
+    }
+
 }
 
-GLuint generateShaderProgram() {
-    //Vertex Shader
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    int success;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-
-    if (success == GL_FALSE) {
-        char *info_log = malloc(512);
-        glGetShaderInfoLog(vertexShader, 512, NULL, info_log);
-        printf("Vertex shader compilation error: %s", info_log);
-    }
-    ///////////////////////
-    // Fragment Shader
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const char* fragmentShaderSource = readFile(fragmentShaderSourceFile);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-
-    if (success == GL_FALSE) {
-        char *info_log = malloc(512);
-        glGetShaderInfoLog(fragmentShader, 512, NULL, info_log);
-        printf("Fragment shader compilation error: %s", info_log);
-    }
-    ////////////////////////
-    // Shader Program
-    GLuint shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (success == GL_FALSE) {
-        char *info_log = malloc(512);
-        glGetProgramInfoLog(vertexShader, 512, NULL, info_log);
-        printf("Program linking error: %s", info_log);
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    free((void*)fragmentShaderSource);
-    ///////////////////////
-    return shaderProgram;
-}
-
-int main(int argc, char **argv) {
-    // Create window and set context
-    GLFWwindow* window = createWindow();
-    // compile a shader program
-    GLuint shaderProgram = generateShaderProgram();
-
-
-    float vertices[] = {
+void createBufferObjects (GLuint* VAO, GLuint* VBO, GLuint* EBO) {
+    const float vertices[] = {
             -1.0f, -1.0f, 0.0f,
             1.0f, -1.0f, 0.0f,
             -1.0f, 1.0f, 0.0f,
             1.0f, 1.0f, 0.0f
     };
 
-    unsigned int indices[] = {
+    const unsigned int indices[] = {
             0, 1, 2,
             1, 3, 2
     };
 
-    // Create OpenGL Objects
-    GLuint VAO;
-    GLuint VBO;
-    GLuint EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    glGenVertexArrays(1, VAO);
+    glGenBuffers(1, VBO);
+    glGenBuffers(1, EBO);
 
     // Bind Vertex Array Object to save bindings for VBO and EBO
-    glBindVertexArray(VAO);
+    glBindVertexArray(*VAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, *VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // route data in VBO to the Vertex Attribute at location 0 and enable vertex attributes
@@ -192,20 +69,41 @@ int main(int argc, char **argv) {
 
     // Ubind the VAO
     glBindVertexArray(0);
+}
 
+
+int main(int argc, char **argv) {
+//    printf("%lf\n%lf\n%lf", properties.zoom_scale, properties.x_pos, properties.y_pos);
+//    return 0;
+
+    // Create window and set context
+    GLFWwindow* window = createWindow();
+    // compile a shader program
+    GLuint shaderProgram = generateShaderProgram();
+
+    // Create OpenGL Objects
+    GLuint VAO;
+    GLuint VBO;
+    GLuint EBO;
+    createBufferObjects(&VAO, &VBO, &EBO);
+
+    // The time that the program has been running
     double time = 0.0f;
+    double time_old = 0.0f;
+    double time_delta = 0.0f;
+    // how much zoom the current time equates to
+    double zoom_time = 0.0f;
+    // The current zoom level
     double zoom = 1.0f;
-    double x_pos = (float)SCREEN_WIDTH / 2;
+
     double x_pos_new, x_pos_scaled;
-    double y_pos = (float)SCREEN_HEIGHT / 2;
     double y_pos_new, y_pos_scaled;
-    int moved;
 
     double height, width;
     double aspect = (double)SCREEN_WIDTH / SCREEN_HEIGHT;
     GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
-
     GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
+
     glUseProgram(shaderProgram);
     glUniform2f(screen_location, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT);
     glUseProgram(0);
@@ -219,7 +117,10 @@ int main(int argc, char **argv) {
 
     while (!glfwWindowShouldClose(window)) {
         time = glfwGetTime();
-        zoom = exp2(time / 4);
+        time_delta = time - time_old;
+        time_old = time;
+        zoom_time = zoom_time + time_delta * properties.zoom_scale;
+        zoom = exp2(zoom_time);
         height = 2.0 / zoom;
         width = aspect * height;
 
@@ -245,19 +146,18 @@ int main(int argc, char **argv) {
 
         /// CALC NEW CENTER
         // get new cursor position
-        moved = 0;
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
             if (!pressed) {
                 pressed = 1;
 
                 glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
                 if (x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT) {
-                    x_pos = x_pos_new;
-                    y_pos = y_pos_new;
+                    properties.x_pos = x_pos_new;
+                    properties.y_pos = y_pos_new;
 
                     // scale to screen coordinates
-                    x_pos_scaled = x_pos / SCREEN_WIDTH;
-                    y_pos_scaled = y_pos / SCREEN_HEIGHT;
+                    x_pos_scaled = properties.x_pos / SCREEN_WIDTH;
+                    y_pos_scaled = properties.y_pos / SCREEN_HEIGHT;
 
                     // make relative to center
                     x_pos_scaled = x_pos_scaled - 0.5f;
