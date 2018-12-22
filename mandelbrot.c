@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
 
     // upload the screen dimensions to the gpu
     glUseProgram(shaderProgram);
-    glUniform2f(screen_location, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT);
+    glUniform2d(screen_location, (double)SCREEN_WIDTH, (double)SCREEN_HEIGHT);
     glUseProgram(0);
 
     while (!glfwWindowShouldClose(window)) {
@@ -191,9 +191,9 @@ int main(int argc, char **argv) {
 
         glUseProgram(shaderProgram);
         // now push it to the shader
-        glUniform2f(wh_location, (float)properties.width, (float)properties.height);
+        glUniform2d(wh_location, properties.width, properties.height);
         if (properties.moved_center) {
-            glUniform2f(center_location, (float)properties.center_x, (float)properties.center_y);
+            glUniform2d(center_location, properties.center_x, properties.center_y);
         }
 
         //bind and unbind VAO if I want to draw more than one object

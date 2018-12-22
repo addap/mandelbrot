@@ -2,13 +2,13 @@
 
 out vec4 fragColor;
 
-uniform vec2 center;
-uniform vec2 wh;
-uniform vec2 screen;
+uniform dvec2 center;
+uniform dvec2 wh;
+uniform dvec2 screen;
 
 void main()
 {
-    vec2 xy = gl_FragCoord.xy;
+    dvec2 xy = gl_FragCoord.xy;
 
     xy.x = xy.x / screen.x;
     xy.y = xy.y / screen.y;
@@ -19,7 +19,7 @@ void main()
     //double origin_x = center_x - 0.5 * width;
     //double origin_y = center_y - 0.5 * height;
 
-    vec2 halfs = vec2(0.5, 0.5);
+    dvec2 halfs = dvec2(0.5, 0.5);
     xy = wh * (xy - halfs) + center;
     //xy.x = width * xy.x + origin_x;
     //xy.y = height * xy.y + origin_y;
