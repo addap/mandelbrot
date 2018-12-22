@@ -2,8 +2,12 @@
 
 Properties properties = {
         .zoom_scale = 1.0f,
-        .x_pos = 0.0f,
-        .y_pos = 0.0f
+        .pos_x = 0.0f,
+        .pos_y = 0.0f,
+        .aspect = (double)SCREEN_WIDTH / SCREEN_HEIGHT,
+        .center_x = 0.0f,
+        .center_y = 0.0f,
+        .moved_center = 0
 };
 
 int pressed_states[3];
@@ -11,44 +15,110 @@ int UP_STATE = 0;
 int DOWN_STATE = 1;
 int E_STATE = 2;
 
-float zoom_speed = 0.0;
+double x_pos_new, x_pos_scaled;
+double y_pos_new, y_pos_scaled;
+
+const float vertices[] = {
+        -1.0f, -1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 0.0f
+};
+
+const unsigned int indices[] = {
+        0, 1, 2,
+        1, 3, 2
+};
+
+int code_to_index(int code) {
+    switch (code) {
+        case GLFW_KEY_UP:
+            return 0;
+        case GLFW_KEY_DOWN:
+            return 1;
+        case GLFW_KEY_E :
+            return 2;
+        default:
+            fprintf(stderr, "Unknown code to retrieve index from: (%d)", code);
+            exit(1);
+    }
+}
+
+/// Checks if the key specified by that key_code was just pressed when this function was called.
+/// If called again while the key was not registered as not pressed, returns false
+/// \param window
+/// \param key_code
+/// \return true if the key has just been pressed and not held
+int key_pressed(GLFWwindow *window, int key_code) {
+    int index = code_to_index(key_code);
+    if (glfwGetKey(window, key_code) == GLFW_PRESS) {
+        if (!pressed_states[index]) {
+            pressed_states[index] = 1;
+            return 1;
+        }
+    } else {
+        pressed_states[index] = 0;
+    }
+    return 0;
+}
 
 void process_input(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, 1);
     }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && !pressed_states[UP_STATE]) {
-        if (zoom_speed <= 10.0) {
-            zoom_speed++;
+
+    if (key_pressed(window, GLFW_KEY_UP)) {
+        if (properties.zoom_scale < -ZOOM_THRESHOLD) {
+            properties.zoom_scale /= 2.0f;
+        } else if (properties.zoom_scale >= ZOOM_THRESHOLD) {
+            properties.zoom_scale *= 2.0f;
         } else {
-            zoom_speed = 10;
-        }
-        pressed_states[UP_STATE] = 1;
-    } else {
-        pressed_states[UP_STATE] = 0;
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !pressed_states[DOWN_STATE]) {
-        if (zoom_speed >= 1) {
-            zoom_speed++;
-        } else {
-            zoom_speed = 10;
+            properties.zoom_scale = ZOOM_THRESHOLD;
         }
     }
 
+    if (key_pressed(window, GLFW_KEY_DOWN)) {
+        if (properties.zoom_scale <= -ZOOM_THRESHOLD) {
+            properties.zoom_scale *= 2.0f;
+        } else if (properties.zoom_scale > ZOOM_THRESHOLD) {
+            properties.zoom_scale /= 2.0f;
+        } else {
+            properties.zoom_scale = -ZOOM_THRESHOLD;
+        }
+    }
+
+    /// CALC NEW CENTER
+    // get new cursor position
+    glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
+    if (key_pressed(window, GLFW_KEY_E)
+        && x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH
+        && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT)
+    {
+        properties.pos_x = x_pos_new;
+        properties.pos_y = y_pos_new;
+
+        // scale to screen coordinates
+        x_pos_scaled = properties.pos_x / SCREEN_WIDTH;
+        y_pos_scaled = properties.pos_y / SCREEN_HEIGHT;
+
+        // make relative to center
+        x_pos_scaled = x_pos_scaled - 0.5f;
+        y_pos_scaled = y_pos_scaled - 0.5f;
+
+        // calculate next center
+        properties.center_x = x_pos_scaled * properties.width + properties.center_x;
+        properties.center_y = - y_pos_scaled * properties.height + properties.center_y;
+
+        properties.moved_center = 1;
+//            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
+//            printf("WINDOWCursor is at %lf, %lf\n", pos_x, pos_y);
+    } else {
+        properties.moved_center = 0;
+    }
 }
 
 void createBufferObjects (GLuint* VAO, GLuint* VBO, GLuint* EBO) {
-    const float vertices[] = {
-            -1.0f, -1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-            -1.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 0.0f
-    };
 
-    const unsigned int indices[] = {
-            0, 1, 2,
-            1, 3, 2
-    };
 
     glGenVertexArrays(1, VAO);
     glGenBuffers(1, VBO);
@@ -73,7 +143,7 @@ void createBufferObjects (GLuint* VAO, GLuint* VBO, GLuint* EBO) {
 
 
 int main(int argc, char **argv) {
-//    printf("%lf\n%lf\n%lf", properties.zoom_scale, properties.x_pos, properties.y_pos);
+//    printf("%lf\n%lf\n%lf", properties.zoom_scale, properties.pos_x, properties.pos_y);
 //    return 0;
 
     // Create window and set context
@@ -96,24 +166,14 @@ int main(int argc, char **argv) {
     // The current zoom level
     double zoom = 1.0f;
 
-    double x_pos_new, x_pos_scaled;
-    double y_pos_new, y_pos_scaled;
-
-    double height, width;
-    double aspect = (double)SCREEN_WIDTH / SCREEN_HEIGHT;
     GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
     GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
+    GLint center_location = glGetUniformLocation(shaderProgram, "center");
 
+    // upload the screen dimensions to the gpu
     glUseProgram(shaderProgram);
     glUniform2f(screen_location, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT);
     glUseProgram(0);
-
-    double center_x = 0;
-    double center_y = 0;
-    GLint center_location = glGetUniformLocation(shaderProgram, "center");
-
-    int pressed = 0;
-    int zoomed = 0;
 
     while (!glfwWindowShouldClose(window)) {
         time = glfwGetTime();
@@ -121,8 +181,8 @@ int main(int argc, char **argv) {
         time_old = time;
         zoom_time = zoom_time + time_delta * properties.zoom_scale;
         zoom = exp2(zoom_time);
-        height = 2.0 / zoom;
-        width = aspect * height;
+        properties.height = 2.0 / zoom;
+        properties.width = properties.aspect * properties.height;
 
 
         // Clear Screen
@@ -131,8 +191,10 @@ int main(int argc, char **argv) {
 
         glUseProgram(shaderProgram);
         // now push it to the shader
-        glUniform2f(wh_location, (float)width, (float)height);
-        glUniform2f(center_location, (float)center_x, (float)center_y);
+        glUniform2f(wh_location, (float)properties.width, (float)properties.height);
+        if (properties.moved_center) {
+            glUniform2f(center_location, (float)properties.center_x, (float)properties.center_y);
+        }
 
         //bind and unbind VAO if I want to draw more than one object
         glBindVertexArray(VAO);
@@ -143,36 +205,6 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
         glfwPollEvents();
         process_input(window);
-
-        /// CALC NEW CENTER
-        // get new cursor position
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            if (!pressed) {
-                pressed = 1;
-
-                glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
-                if (x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT) {
-                    properties.x_pos = x_pos_new;
-                    properties.y_pos = y_pos_new;
-
-                    // scale to screen coordinates
-                    x_pos_scaled = properties.x_pos / SCREEN_WIDTH;
-                    y_pos_scaled = properties.y_pos / SCREEN_HEIGHT;
-
-                    // make relative to center
-                    x_pos_scaled = x_pos_scaled - 0.5f;
-                    y_pos_scaled = y_pos_scaled - 0.5f;
-
-                    // calculate next center
-                    center_x = x_pos_scaled * width + center_x;
-                    center_y = - y_pos_scaled * height + center_y;
-                }
-//            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
-//            printf("WINDOWCursor is at %lf, %lf\n", x_pos, y_pos);
-            }
-        } else {
-            pressed = 0;
-        }
     }
 
     glfwTerminate();

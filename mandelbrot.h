@@ -9,13 +9,24 @@
 #include "window.h"
 #include "shader.h"
 
-#endif //MANDELBROT_MANDELBROT_H
+#define ZOOM_THRESHOLD 0.0625f
 
 typedef struct {
     // How much the zoom_time increases/decreases per second
     double zoom_scale;
 
     // the pixel coordinates of the center
-    double x_pos;
-    double y_pos;
+    double pos_x;
+    double pos_y;
+
+    double width;
+    double height;
+    double aspect;
+
+    double center_x;
+    double center_y;
+
+    int moved_center;
 } Properties;
+
+#endif //MANDELBROT_MANDELBROT_H

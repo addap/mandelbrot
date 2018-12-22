@@ -14,6 +14,6 @@
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
 
-#endif //MANDELBROT_WINDOW_H
-
 GLFWwindow* createWindow();
+
+#endif //MANDELBROT_WINDOW_H
