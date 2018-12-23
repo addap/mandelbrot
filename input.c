@@ -29,8 +29,8 @@ int code_to_index(int code) {
 
 /// Checks if the key specified by that key_code was just pressed when this function was called.
 /// If called again while the key was not registered as not pressed, returns false
-/// \param window
-/// \param key_code
+/// \param window The current GLFWwindow instance
+/// \param key_code The glfw code of the key to be checked
 /// \return true if the key has just been pressed and not held
 int key_pressed(GLFWwindow *window, int key_code) {
     int index = code_to_index(key_code);
