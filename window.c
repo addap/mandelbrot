@@ -78,4 +78,5 @@ GLuint createArrayBuffer () {
 
     // Ubind the VAO
     glBindVertexArray(0);
+    return VAO;
 }
