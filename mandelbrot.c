@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
 //    return 0;
     properties_t properties = {
             .zoom_scale = 1.0f,
-            .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
+            .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT
     };
 
     // Create window and set context
@@ -25,42 +25,38 @@ int main(int argc, char **argv) {
     // The current zoom level
     double zoom = 1.0f;
 
-//    GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
+    GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
     GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
-    GLint cursor_location = glGetUniformLocation(shaderProgram, "cursor");
-    GLint border_location = glGetUniformLocation(shaderProgram, "border");
-//    GLint center_location = glGetUniformLocation(shaderProgram, "center");
+    GLint center_location = glGetUniformLocation(shaderProgram, "center");
 
     // upload the screen dimensions to the gpu
     glUseProgram(shaderProgram);
-    glUniform2f(screen_location, SCREEN_WIDTH, SCREEN_HEIGHT);
-    glUniform1i(border_location, 1);
+    glUniform2d(screen_location, (double)SCREEN_WIDTH, (double)SCREEN_HEIGHT);
     glUseProgram(0);
 
     while (!glfwWindowShouldClose(window)) {
-//        time = glfwGetTime();
-//        time_delta = time - time_old;
-//        time_old = time;
-//        zoom_time = zoom_time + time_delta * properties.zoom_scale;
-//        zoom = exp2(zoom_time);
-//        properties.height = 2.0 / zoom;
-//        properties.width = properties.aspect * properties.height;
+        time = glfwGetTime();
+        time_delta = time - time_old;
+        time_old = time;
+        zoom_time = zoom_time + time_delta * properties.zoom_scale;
+        zoom = exp2(zoom_time);
+        properties.height = 2.0 / zoom;
+        properties.width = properties.aspect * properties.height;
 
 
         // Clear Screen
-        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
         // now push it to the shader
-        glUniform4f(cursor_location, properties.selection_ul_x, properties.selection_ul_y, properties.selection_lr_x, properties.selection_lr_y);
+        glUniform2d(wh_location, properties.width, properties.height);
+        if (properties.moved_center) {
+            glUniform2d(center_location, properties.center_x, properties.center_y);
+        }
+//        printf("w: %lf, h: %lf, c: (%lf, %lf)\n", properties.width, properties.height, properties.center_x, properties.center_y);
 
-//        glUniform2d(wh_location, properties.width, properties.height);
-//        if (properties.moved_center) {
-//            glUniform2d(center_location, properties.center_x, properties.center_y);
-//        }
-
-        //bind and unbind VAO if I want to draw more than one object
+        //bind VAO to draw the triangles over the whole screen
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glUseProgram(0);

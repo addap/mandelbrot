@@ -11,6 +11,9 @@
 #include <math.h>
 #include <stdlib.h>
 
+
+#define ZOOM_THRESHOLD 0.0625f
+
 void process_input(GLFWwindow *window, properties_t *properties);
 
 #endif //MANDELBROT_INPUT_H

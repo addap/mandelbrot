@@ -9,10 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#include "properties.h"
 
 GLFWwindow* createWindow();
 GLuint createArrayBuffer ();

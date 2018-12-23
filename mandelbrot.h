@@ -11,6 +11,5 @@
 #include "input.h"
 #include "properties.h"
 
-#define ZOOM_THRESHOLD 0.0625f
 
 #endif //MANDELBROT_MANDELBROT_H
