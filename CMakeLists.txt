@@ -19,4 +19,5 @@ target_link_libraries(mandelbrot
 
 target_compile_options(mandelbrot PRIVATE
         -Wall
-        -Wextra)
+        -Wextra
+        -Ofast)
