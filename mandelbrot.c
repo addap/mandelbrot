@@ -1,233 +1,12 @@
 #include "mandelbrot.h"
 
-Properties properties = {
-        .zoom_scale = 1.0f,
-        .pos_x = 0.0f,
-        .pos_y = 0.0f,
-        .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
-        .center_x = 0.0f,
-        .center_y = 0.0f,
-        .moved_center = 0,
-        .selection_ul_x = 0.0f,
-        .selection_ul_y = 0.0f,
-        .selection_lr_x = 0.0f,
-        .selection_lr_y = 0.0f,
-        .selection_start_x = 0.0f,
-        .selection_start_y = 0.0f
-};
-
-int pressed_states[4];
-int UP_STATE = 0;
-int DOWN_STATE = 1;
-int E_STATE = 2;
-int MOUSE_STATE = 3;
-
-double x_pos_new, x_pos_scaled;
-double y_pos_new, y_pos_scaled;
-
-const float vertices[] = {
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f
-};
-
-const unsigned int indices[] = {
-        0, 1, 2,
-        1, 3, 2
-};
-
-int code_to_index(int code) {
-    switch (code) {
-        case GLFW_KEY_UP:
-            return 0;
-        case GLFW_KEY_DOWN:
-            return 1;
-        case GLFW_KEY_E :
-            return 2;
-        default:
-            fprintf(stderr, "Unknown code to retrieve index from: (%d)", code);
-            exit(1);
-    }
-}
-
-/// Checks if the key specified by that key_code was just pressed when this function was called.
-/// If called again while the key was not registered as not pressed, returns false
-/// \param window
-/// \param key_code
-/// \return true if the key has just been pressed and not held
-int key_pressed(GLFWwindow *window, int key_code) {
-    int index = code_to_index(key_code);
-    if (glfwGetKey(window, key_code) == GLFW_PRESS) {
-        if (!pressed_states[index]) {
-            pressed_states[index] = 1;
-            return 1;
-        }
-    } else {
-        pressed_states[index] = 0;
-    }
-    return 0;
-}
-
-typedef struct {
-    int w;
-    int h;
-} aspect_case_t;
-
-void process_input(GLFWwindow *window) {
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, 1);
-    }
-
-//    if (key_pressed(window, GLFW_KEY_UP)) {
-//        if (properties.zoom_scale < -ZOOM_THRESHOLD) {
-//            properties.zoom_scale /= 2.0f;
-//        } else if (properties.zoom_scale >= ZOOM_THRESHOLD) {
-//            properties.zoom_scale *= 2.0f;
-//        } else {
-//            properties.zoom_scale = ZOOM_THRESHOLD;
-//        }
-//    }
-//
-//    if (key_pressed(window, GLFW_KEY_DOWN)) {
-//        if (properties.zoom_scale <= -ZOOM_THRESHOLD) {
-//            properties.zoom_scale *= 2.0f;
-//        } else if (properties.zoom_scale > ZOOM_THRESHOLD) {
-//            properties.zoom_scale /= 2.0f;
-//        } else {
-//            properties.zoom_scale = -ZOOM_THRESHOLD;
-//        }
-//    }
-
-    // get new cursor position
-    glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
-    float pos_x = (float)x_pos_new;
-    float pos_y = (float)y_pos_new;
-    aspect_case_t aspect_case;
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-        if (!pressed_states[MOUSE_STATE]) {
-            pressed_states[MOUSE_STATE] = 1;
-            properties.selection_start_x = properties.selection_ul_x = properties.selection_lr_x = pos_x;
-            properties.selection_start_y = properties.selection_ul_y = properties.selection_lr_y = pos_y;
-        } else {
-            // could do that in the case analysis
-            properties.selection_ul_x = fminf(properties.selection_start_x, pos_x);
-            properties.selection_ul_y = fminf(properties.selection_start_y, pos_y);
-            properties.selection_lr_x = fmaxf(properties.selection_start_x, pos_x);
-            properties.selection_lr_y = fmaxf(properties.selection_start_y, pos_y);
-
-            if (properties.selection_start_x <= pos_x && properties.selection_start_y <= pos_y) {
-                // (lr, lr)
-                aspect_case.w = 1;
-                aspect_case.h = 1;
-            } else if (properties.selection_start_x <= pos_x && properties.selection_start_y > pos_y) {
-                // (lr, ul)
-                aspect_case.w = 1;
-                aspect_case.h = 0;
-            } else if (properties.selection_start_x > pos_x && properties.selection_start_y > pos_y) {
-                // (ul, ul)
-                aspect_case.w = 0;
-                aspect_case.h = 0;
-            } else {
-                // (ul, lr)
-                aspect_case.w = 0;
-                aspect_case.h = 1;
-            }
-
-            // we need
-            float delta_x = properties.selection_lr_x - properties.selection_ul_x;
-            float delta_y = properties.selection_lr_y - properties.selection_ul_y;
-            float aspect_current = delta_x / delta_y;
-
-            if (aspect_current < properties.aspect) {
-                // increase width
-                float delta_x_new = properties.aspect * delta_y;
-                if (aspect_case.w) {
-                    // move lr corner to the right
-                    properties.selection_lr_x = properties.selection_ul_x + delta_x_new;
-                } else {
-                    // move ul corner to the left
-                    properties.selection_ul_x = properties.selection_lr_x - delta_x_new;
-                }
-            } else if (aspect_current > properties.aspect) {
-                //increase height
-                float delta_y_new = delta_x / properties.aspect;
-                if (aspect_case.h) {
-                    // move lr corner down
-                    properties.selection_lr_y = properties.selection_ul_y + delta_y_new;
-                } else {
-                    // move ul corner up
-                    properties.selection_ul_y = properties.selection_lr_y - delta_y_new;
-                }
-            }
-        }
-    } else {
-        pressed_states[MOUSE_STATE] = 0;
-
-        properties.selection_ul_x = 0.0f;
-        properties.selection_ul_y = 0.0f;
-        properties.selection_lr_x = 0.0f;
-        properties.selection_lr_y = 0.0f;
-        properties.selection_start_x = 0.0f;
-        properties.selection_start_y = 0.0f;
-    }
-
-//    if (key_pressed(window, GLFW_KEY_E)
-//        && x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH
-//        && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT)
-//    {
-//        properties.pos_x = x_pos_new;
-//        properties.pos_y = y_pos_new;
-//
-//        // scale to screen coordinates
-//        x_pos_scaled = properties.pos_x / SCREEN_WIDTH;
-//        y_pos_scaled = properties.pos_y / SCREEN_HEIGHT;
-//
-//        // make relative to center
-//        x_pos_scaled = x_pos_scaled - 0.5f;
-//        y_pos_scaled = y_pos_scaled - 0.5f;
-//
-//        // calculate next center
-//        properties.center_x = x_pos_scaled * properties.width + properties.center_x;
-//        properties.center_y = - y_pos_scaled * properties.height + properties.center_y;
-//
-//        properties.moved_center = 1;
-////            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
-////            printf("WINDOWCursor is at %lf, %lf\n", pos_x, pos_y);
-//    } else {
-//        properties.moved_center = 0;
-//    }
-}
-
-void createBufferObjects (GLuint* VAO, GLuint* VBO, GLuint* EBO) {
-
-
-    glGenVertexArrays(1, VAO);
-    glGenBuffers(1, VBO);
-    glGenBuffers(1, EBO);
-
-    // Bind Vertex Array Object to save bindings for VBO and EBO
-    glBindVertexArray(*VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, *VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // route data in VBO to the Vertex Attribute at location 0 and enable vertex attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Ubind the VAO
-    glBindVertexArray(0);
-}
-
-
 int main(int argc, char **argv) {
 //    printf("%lf\n%lf\n%lf", properties.zoom_scale, properties.pos_x, properties.pos_y);
 //    return 0;
+    properties_t properties = {
+            .zoom_scale = 1.0f,
+            .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
+    };
 
     // Create window and set context
     GLFWwindow* window = createWindow();
@@ -235,10 +14,7 @@ int main(int argc, char **argv) {
     GLuint shaderProgram = generateShaderProgram();
 
     // Create OpenGL Objects
-    GLuint VAO;
-    GLuint VBO;
-    GLuint EBO;
-    createBufferObjects(&VAO, &VBO, &EBO);
+    GLuint VAO = createArrayBuffer();
 
     // The time that the program has been running
     double time = 0.0f;
@@ -292,7 +68,7 @@ int main(int argc, char **argv) {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-        process_input(window);
+        process_input(window, &properties);
     }
 
     glfwTerminate();

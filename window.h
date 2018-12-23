@@ -15,5 +15,6 @@
 #define SCREEN_HEIGHT 600
 
 GLFWwindow* createWindow();
+GLuint createArrayBuffer ();
 
 #endif //MANDELBROT_WINDOW_H
