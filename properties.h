@@ -6,21 +6,12 @@
 #define MANDELBROT_PROPERTIES_H
 
 typedef struct {
-    // How much the zoom_time increases/decreases per second
-    double zoom_scale;
-
-    // the pixel coordinates of the center
-    double pos_x;
-    double pos_y;
-
     double width;
     double height;
     float aspect;
 
-    double center_x;
-    double center_y;
-
-    int moved_center;
+    double origin_x;
+    double origin_y;
 
     float selection_ul_x;
     float selection_ul_y;

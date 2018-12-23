@@ -5,10 +5,10 @@
 #include "window.h"
 
 const float vertices[] = {
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f
+        -1.0f, -1.0f, 0.0f,  0.0f, 0.0f,
+         1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
+        -1.0f,  1.0f, 0.0f,  0.0f, 1.0f,
+         1.0f,  1.0f, 0.0f,  1.0f, 1.0f
 };
 
 const unsigned int indices[] = {
@@ -73,8 +73,11 @@ GLuint createArrayBuffer () {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // route data in VBO to the Vertex Attribute at location 0 and enable vertex attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    // route texture coordinates for each vertex, these are interpolated for each fragment later on
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // Ubind the VAO
     glBindVertexArray(0);
