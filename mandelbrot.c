@@ -4,7 +4,7 @@ Properties properties = {
         .zoom_scale = 1.0f,
         .pos_x = 0.0f,
         .pos_y = 0.0f,
-        .aspect = (double)SCREEN_WIDTH / SCREEN_HEIGHT,
+        .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
         .center_x = 0.0f,
         .center_y = 0.0f,
         .moved_center = 0,
@@ -69,6 +69,11 @@ int key_pressed(GLFWwindow *window, int key_code) {
     return 0;
 }
 
+typedef struct {
+    int w;
+    int h;
+} aspect_case_t;
+
 void process_input(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, 1);
@@ -94,23 +99,68 @@ void process_input(GLFWwindow *window) {
 //        }
 //    }
 
-    /// CALC NEW CENTER
     // get new cursor position
     glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
+    float pos_x = (float)x_pos_new;
+    float pos_y = (float)y_pos_new;
+    aspect_case_t aspect_case;
+
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
         if (!pressed_states[MOUSE_STATE]) {
             pressed_states[MOUSE_STATE] = 1;
-            properties.selection_ul_x = (float)x_pos_new;
-            properties.selection_ul_y = (float)y_pos_new;
-            properties.selection_lr_x = (float)x_pos_new;
-            properties.selection_lr_y = (float)y_pos_new;
-            properties.selection_start_x = (float)x_pos_new;
-            properties.selection_start_y = (float)y_pos_new;
+            properties.selection_start_x = properties.selection_ul_x = properties.selection_lr_x = pos_x;
+            properties.selection_start_y = properties.selection_ul_y = properties.selection_lr_y = pos_y;
         } else {
-            properties.selection_ul_x = fminf(properties.selection_start_x, (float)x_pos_new);
-            properties.selection_ul_y = fminf(properties.selection_start_y, (float)y_pos_new);
-            properties.selection_lr_x = fmaxf(properties.selection_start_x, (float)x_pos_new);
-            properties.selection_lr_y = fmaxf(properties.selection_start_y, (float)y_pos_new);
+            // could do that in the case analysis
+            properties.selection_ul_x = fminf(properties.selection_start_x, pos_x);
+            properties.selection_ul_y = fminf(properties.selection_start_y, pos_y);
+            properties.selection_lr_x = fmaxf(properties.selection_start_x, pos_x);
+            properties.selection_lr_y = fmaxf(properties.selection_start_y, pos_y);
+
+            if (properties.selection_start_x <= pos_x && properties.selection_start_y <= pos_y) {
+                // (lr, lr)
+                aspect_case.w = 1;
+                aspect_case.h = 1;
+            } else if (properties.selection_start_x <= pos_x && properties.selection_start_y > pos_y) {
+                // (lr, ul)
+                aspect_case.w = 1;
+                aspect_case.h = 0;
+            } else if (properties.selection_start_x > pos_x && properties.selection_start_y > pos_y) {
+                // (ul, ul)
+                aspect_case.w = 0;
+                aspect_case.h = 0;
+            } else {
+                // (ul, lr)
+                aspect_case.w = 0;
+                aspect_case.h = 1;
+            }
+
+            // we need
+            float delta_x = properties.selection_lr_x - properties.selection_ul_x;
+            float delta_y = properties.selection_lr_y - properties.selection_ul_y;
+            float aspect_current = delta_x / delta_y;
+
+            if (aspect_current < properties.aspect) {
+                // increase width
+                float delta_x_new = properties.aspect * delta_y;
+                if (aspect_case.w) {
+                    // move lr corner to the right
+                    properties.selection_lr_x = properties.selection_ul_x + delta_x_new;
+                } else {
+                    // move ul corner to the left
+                    properties.selection_ul_x = properties.selection_lr_x - delta_x_new;
+                }
+            } else if (aspect_current > properties.aspect) {
+                //increase height
+                float delta_y_new = delta_x / properties.aspect;
+                if (aspect_case.h) {
+                    // move lr corner down
+                    properties.selection_lr_y = properties.selection_ul_y + delta_y_new;
+                } else {
+                    // move ul corner up
+                    properties.selection_ul_y = properties.selection_lr_y - delta_y_new;
+                }
+            }
         }
     } else {
         pressed_states[MOUSE_STATE] = 0;
@@ -202,11 +252,13 @@ int main(int argc, char **argv) {
 //    GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
     GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
     GLint cursor_location = glGetUniformLocation(shaderProgram, "cursor");
+    GLint border_location = glGetUniformLocation(shaderProgram, "border");
 //    GLint center_location = glGetUniformLocation(shaderProgram, "center");
 
     // upload the screen dimensions to the gpu
     glUseProgram(shaderProgram);
     glUniform2f(screen_location, SCREEN_WIDTH, SCREEN_HEIGHT);
+    glUniform1i(border_location, 1);
     glUseProgram(0);
 
     while (!glfwWindowShouldClose(window)) {

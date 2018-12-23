@@ -21,7 +21,7 @@ typedef struct {
 
     double width;
     double height;
-    double aspect;
+    float aspect;
 
     double center_x;
     double center_y;
