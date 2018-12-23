@@ -27,6 +27,14 @@ typedef struct {
     double center_y;
 
     int moved_center;
+
+    float selection_ul_x;
+    float selection_ul_y;
+    float selection_lr_x;
+    float selection_lr_y;
+
+    float selection_start_x;
+    float selection_start_y;
 } Properties;
 
 #endif //MANDELBROT_MANDELBROT_H

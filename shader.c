@@ -5,7 +5,7 @@
 #include "shader.h"
 
 const char* vertexShaderSourceFile = "../vertex-shader-id.glsl";
-const char* fragmentShaderSourceFile = "../mandelbrot.glsl";
+const char* fragmentShaderSourceFile = "../fragment-border.glsl";
 
 const char* readFile(const char *file_url) {
     FILE* file = fopen(file_url, "r");

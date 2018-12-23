@@ -7,13 +7,20 @@ Properties properties = {
         .aspect = (double)SCREEN_WIDTH / SCREEN_HEIGHT,
         .center_x = 0.0f,
         .center_y = 0.0f,
-        .moved_center = 0
+        .moved_center = 0,
+        .selection_ul_x = 0.0f,
+        .selection_ul_y = 0.0f,
+        .selection_lr_x = 0.0f,
+        .selection_lr_y = 0.0f,
+        .selection_start_x = 0.0f,
+        .selection_start_y = 0.0f
 };
 
-int pressed_states[3];
+int pressed_states[4];
 int UP_STATE = 0;
 int DOWN_STATE = 1;
 int E_STATE = 2;
+int MOUSE_STATE = 3;
 
 double x_pos_new, x_pos_scaled;
 double y_pos_new, y_pos_scaled;
@@ -67,54 +74,80 @@ void process_input(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, 1);
     }
 
-    if (key_pressed(window, GLFW_KEY_UP)) {
-        if (properties.zoom_scale < -ZOOM_THRESHOLD) {
-            properties.zoom_scale /= 2.0f;
-        } else if (properties.zoom_scale >= ZOOM_THRESHOLD) {
-            properties.zoom_scale *= 2.0f;
-        } else {
-            properties.zoom_scale = ZOOM_THRESHOLD;
-        }
-    }
-
-    if (key_pressed(window, GLFW_KEY_DOWN)) {
-        if (properties.zoom_scale <= -ZOOM_THRESHOLD) {
-            properties.zoom_scale *= 2.0f;
-        } else if (properties.zoom_scale > ZOOM_THRESHOLD) {
-            properties.zoom_scale /= 2.0f;
-        } else {
-            properties.zoom_scale = -ZOOM_THRESHOLD;
-        }
-    }
+//    if (key_pressed(window, GLFW_KEY_UP)) {
+//        if (properties.zoom_scale < -ZOOM_THRESHOLD) {
+//            properties.zoom_scale /= 2.0f;
+//        } else if (properties.zoom_scale >= ZOOM_THRESHOLD) {
+//            properties.zoom_scale *= 2.0f;
+//        } else {
+//            properties.zoom_scale = ZOOM_THRESHOLD;
+//        }
+//    }
+//
+//    if (key_pressed(window, GLFW_KEY_DOWN)) {
+//        if (properties.zoom_scale <= -ZOOM_THRESHOLD) {
+//            properties.zoom_scale *= 2.0f;
+//        } else if (properties.zoom_scale > ZOOM_THRESHOLD) {
+//            properties.zoom_scale /= 2.0f;
+//        } else {
+//            properties.zoom_scale = -ZOOM_THRESHOLD;
+//        }
+//    }
 
     /// CALC NEW CENTER
     // get new cursor position
     glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
-    if (key_pressed(window, GLFW_KEY_E)
-        && x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH
-        && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT)
-    {
-        properties.pos_x = x_pos_new;
-        properties.pos_y = y_pos_new;
-
-        // scale to screen coordinates
-        x_pos_scaled = properties.pos_x / SCREEN_WIDTH;
-        y_pos_scaled = properties.pos_y / SCREEN_HEIGHT;
-
-        // make relative to center
-        x_pos_scaled = x_pos_scaled - 0.5f;
-        y_pos_scaled = y_pos_scaled - 0.5f;
-
-        // calculate next center
-        properties.center_x = x_pos_scaled * properties.width + properties.center_x;
-        properties.center_y = - y_pos_scaled * properties.height + properties.center_y;
-
-        properties.moved_center = 1;
-//            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
-//            printf("WINDOWCursor is at %lf, %lf\n", pos_x, pos_y);
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+        if (!pressed_states[MOUSE_STATE]) {
+            pressed_states[MOUSE_STATE] = 1;
+            properties.selection_ul_x = (float)x_pos_new;
+            properties.selection_ul_y = (float)y_pos_new;
+            properties.selection_lr_x = (float)x_pos_new;
+            properties.selection_lr_y = (float)y_pos_new;
+            properties.selection_start_x = (float)x_pos_new;
+            properties.selection_start_y = (float)y_pos_new;
+        } else {
+            properties.selection_ul_x = fminf(properties.selection_start_x, (float)x_pos_new);
+            properties.selection_ul_y = fminf(properties.selection_start_y, (float)y_pos_new);
+            properties.selection_lr_x = fmaxf(properties.selection_start_x, (float)x_pos_new);
+            properties.selection_lr_y = fmaxf(properties.selection_start_y, (float)y_pos_new);
+        }
     } else {
-        properties.moved_center = 0;
+        pressed_states[MOUSE_STATE] = 0;
+
+        properties.selection_ul_x = 0.0f;
+        properties.selection_ul_y = 0.0f;
+        properties.selection_lr_x = 0.0f;
+        properties.selection_lr_y = 0.0f;
+        properties.selection_start_x = 0.0f;
+        properties.selection_start_y = 0.0f;
     }
+
+//    if (key_pressed(window, GLFW_KEY_E)
+//        && x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH
+//        && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT)
+//    {
+//        properties.pos_x = x_pos_new;
+//        properties.pos_y = y_pos_new;
+//
+//        // scale to screen coordinates
+//        x_pos_scaled = properties.pos_x / SCREEN_WIDTH;
+//        y_pos_scaled = properties.pos_y / SCREEN_HEIGHT;
+//
+//        // make relative to center
+//        x_pos_scaled = x_pos_scaled - 0.5f;
+//        y_pos_scaled = y_pos_scaled - 0.5f;
+//
+//        // calculate next center
+//        properties.center_x = x_pos_scaled * properties.width + properties.center_x;
+//        properties.center_y = - y_pos_scaled * properties.height + properties.center_y;
+//
+//        properties.moved_center = 1;
+////            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
+////            printf("WINDOWCursor is at %lf, %lf\n", pos_x, pos_y);
+//    } else {
+//        properties.moved_center = 0;
+//    }
 }
 
 void createBufferObjects (GLuint* VAO, GLuint* VBO, GLuint* EBO) {
@@ -166,23 +199,24 @@ int main(int argc, char **argv) {
     // The current zoom level
     double zoom = 1.0f;
 
-    GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
+//    GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
     GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
-    GLint center_location = glGetUniformLocation(shaderProgram, "center");
+    GLint cursor_location = glGetUniformLocation(shaderProgram, "cursor");
+//    GLint center_location = glGetUniformLocation(shaderProgram, "center");
 
     // upload the screen dimensions to the gpu
     glUseProgram(shaderProgram);
-    glUniform2d(screen_location, (double)SCREEN_WIDTH, (double)SCREEN_HEIGHT);
+    glUniform2f(screen_location, SCREEN_WIDTH, SCREEN_HEIGHT);
     glUseProgram(0);
 
     while (!glfwWindowShouldClose(window)) {
-        time = glfwGetTime();
-        time_delta = time - time_old;
-        time_old = time;
-        zoom_time = zoom_time + time_delta * properties.zoom_scale;
-        zoom = exp2(zoom_time);
-        properties.height = 2.0 / zoom;
-        properties.width = properties.aspect * properties.height;
+//        time = glfwGetTime();
+//        time_delta = time - time_old;
+//        time_old = time;
+//        zoom_time = zoom_time + time_delta * properties.zoom_scale;
+//        zoom = exp2(zoom_time);
+//        properties.height = 2.0 / zoom;
+//        properties.width = properties.aspect * properties.height;
 
 
         // Clear Screen
@@ -191,10 +225,12 @@ int main(int argc, char **argv) {
 
         glUseProgram(shaderProgram);
         // now push it to the shader
-        glUniform2d(wh_location, properties.width, properties.height);
-        if (properties.moved_center) {
-            glUniform2d(center_location, properties.center_x, properties.center_y);
-        }
+        glUniform4f(cursor_location, properties.selection_ul_x, properties.selection_ul_y, properties.selection_lr_x, properties.selection_lr_y);
+
+//        glUniform2d(wh_location, properties.width, properties.height);
+//        if (properties.moved_center) {
+//            glUniform2d(center_location, properties.center_x, properties.center_y);
+//        }
 
         //bind and unbind VAO if I want to draw more than one object
         glBindVertexArray(VAO);
