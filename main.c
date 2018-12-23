@@ -1,4 +1,4 @@
-#include "mandelbrot.h"
+#include "main.h"
 
 int main(int argc, char **argv) {
 //    printf("%lf\n%lf\n%lf", properties.zoom_scale, properties.pos_x, properties.pos_y);
