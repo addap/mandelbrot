@@ -1,10 +1,13 @@
 #version 400
 
+in vec2 TexCoord;
+
 out vec4 fragColor;
 
 uniform vec2 screen;
 uniform vec4 cursor;
 uniform int border;
+uniform sampler2D tex;
 
 layout(origin_upper_left, pixel_center_integer) in vec4 gl_FragCoord;
 
@@ -28,8 +31,6 @@ bool isBetweenHorizontalBorder(vec2 xy) {
 
 void main () {
     vec2 xy = gl_FragCoord.xy;
-//    xy.x = xy.x / screen.x;
-//    xy.y = xy.y / screen.y;
 
     // if we have identical mouse positions, dont draw anything
     if (cursor.xy == cursor.zw) {
@@ -42,16 +43,7 @@ void main () {
       {
         fragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
     } else {
-        fragColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        // else we just draw the texture
+        fragColor = texture(tex, TexCoord);
     }
-    
-//    if ((xy.x >= cursor.x && xy.x <= cursor.x + border)
-//     || (xy.x >= cursor.z - border && xy.x <= cursor.z)
-//     || (xy.y >= cursor.y && xy.y <= cursor.y + border)
-//     || (xy.y >= cursor.w - border && xy.y <= cursor.w)) {
-//        fragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-//    } else {
-//        fragColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-//    }
-//    fragColor = vec4 (1.0, 1.0, 1.0, 1.0);
 }
