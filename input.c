@@ -55,125 +55,77 @@ void process_input(GLFWwindow *window, properties_t *properties) {
         glfwSetWindowShouldClose(window, 1);
     }
 
-    if (key_pressed(window, GLFW_KEY_UP)) {
-        if (properties->zoom_scale < -ZOOM_THRESHOLD) {
-            properties->zoom_scale /= 2.0f;
-        } else if (properties->zoom_scale >= ZOOM_THRESHOLD) {
-            properties->zoom_scale *= 2.0f;
-        } else {
-            properties->zoom_scale = ZOOM_THRESHOLD;
-        }
-    }
-
-    if (key_pressed(window, GLFW_KEY_DOWN)) {
-        if (properties->zoom_scale <= -ZOOM_THRESHOLD) {
-            properties->zoom_scale *= 2.0f;
-        } else if (properties->zoom_scale > ZOOM_THRESHOLD) {
-            properties->zoom_scale /= 2.0f;
-        } else {
-            properties->zoom_scale = -ZOOM_THRESHOLD;
-        }
-    }
-
-//    // get new cursor position
-//    glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
-//    float pos_x = (float)x_pos_new;
-//    float pos_y = (float)y_pos_new;
-//    aspect_case_t aspect_case;
-//
-//    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-//        if (!pressed_states[MOUSE_STATE]) {
-//            pressed_states[MOUSE_STATE] = 1;
-//            properties->selection_start_x = pos_x;
-//            properties->selection_start_y = pos_y;
-//        }
-//
-//        // could do that in the case analysis
-//        properties->selection_ul_x = fminf(properties->selection_start_x, pos_x);
-//        properties->selection_ul_y = fminf(properties->selection_start_y, pos_y);
-//        properties->selection_lr_x = fmaxf(properties->selection_start_x, pos_x);
-//        properties->selection_lr_y = fmaxf(properties->selection_start_y, pos_y);
-//
-//        if (properties->selection_start_x <= pos_x && properties->selection_start_y <= pos_y) {
-//            // (lr, lr)
-//            aspect_case.w = 1;
-//            aspect_case.h = 1;
-//        } else if (properties->selection_start_x <= pos_x && properties->selection_start_y > pos_y) {
-//            // (lr, ul)
-//            aspect_case.w = 1;
-//            aspect_case.h = 0;
-//        } else if (properties->selection_start_x > pos_x && properties->selection_start_y > pos_y) {
-//            // (ul, ul)
-//            aspect_case.w = 0;
-//            aspect_case.h = 0;
-//        } else {
-//            // (ul, lr)
-//            aspect_case.w = 0;
-//            aspect_case.h = 1;
-//        }
-//
-//        // compute the aspect we have and compare against the aspect we need. Based on that, move either the ul or lr corner
-//        float delta_x = properties->selection_lr_x - properties->selection_ul_x;
-//        float delta_y = properties->selection_lr_y - properties->selection_ul_y;
-//        float aspect_current = delta_x / delta_y;
-//
-//        if (aspect_current < properties->aspect) {
-//            // increase width
-//            float delta_x_new = properties->aspect * delta_y;
-//            if (aspect_case.w) {
-//                // move lr corner to the right
-//                properties->selection_lr_x = properties->selection_ul_x + delta_x_new;
-//            } else {
-//                // move ul corner to the left
-//                properties->selection_ul_x = properties->selection_lr_x - delta_x_new;
-//            }
-//        } else if (aspect_current > properties->aspect) {
-//            //increase height
-//            float delta_y_new = delta_x / properties->aspect;
-//            if (aspect_case.h) {
-//                // move lr corner down
-//                properties->selection_lr_y = properties->selection_ul_y + delta_y_new;
-//            } else {
-//                // move ul corner up
-//                properties->selection_ul_y = properties->selection_lr_y - delta_y_new;
-//            }
-//        }
-//    } else {
-//        pressed_states[MOUSE_STATE] = 0;
-//
-//        properties->selection_ul_x = 0.0f;
-//        properties->selection_ul_y = 0.0f;
-//        properties->selection_lr_x = 0.0f;
-//        properties->selection_lr_y = 0.0f;
-//        properties->selection_start_x = 0.0f;
-//        properties->selection_start_y = 0.0f;
-//    }
-
     // get new cursor position
     glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
-        if (key_pressed(window, GLFW_KEY_E)
-        && x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH
-        && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT)
-    {
-        properties->pos_x = x_pos_new;
-        properties->pos_y = y_pos_new;
+    float pos_x = (float)x_pos_new;
+    float pos_y = (float)y_pos_new;
+    aspect_case_t aspect_case;
 
-        // scale to screen coordinates
-        x_pos_scaled = properties->pos_x / SCREEN_WIDTH;
-        y_pos_scaled = properties->pos_y / SCREEN_HEIGHT;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+        if (!pressed_states[MOUSE_STATE]) {
+            pressed_states[MOUSE_STATE] = 1;
+            properties->selection_start_x = pos_x;
+            properties->selection_start_y = pos_y;
+        }
 
-        // make relative to center
-        x_pos_scaled = x_pos_scaled - 0.5f;
-        y_pos_scaled = y_pos_scaled - 0.5f;
+        // could do that in the case analysis
+        properties->selection_ul_x = fminf(properties->selection_start_x, pos_x);
+        properties->selection_ul_y = fminf(properties->selection_start_y, pos_y);
+        properties->selection_lr_x = fmaxf(properties->selection_start_x, pos_x);
+        properties->selection_lr_y = fmaxf(properties->selection_start_y, pos_y);
 
-        // calculate next center
-        properties->center_x = x_pos_scaled * properties->width + properties->center_x;
-        properties->center_y = y_pos_scaled * properties->height + properties->center_y;
+        if (properties->selection_start_x <= pos_x && properties->selection_start_y <= pos_y) {
+            // (lr, lr)
+            aspect_case.w = 1;
+            aspect_case.h = 1;
+        } else if (properties->selection_start_x <= pos_x && properties->selection_start_y > pos_y) {
+            // (lr, ul)
+            aspect_case.w = 1;
+            aspect_case.h = 0;
+        } else if (properties->selection_start_x > pos_x && properties->selection_start_y > pos_y) {
+            // (ul, ul)
+            aspect_case.w = 0;
+            aspect_case.h = 0;
+        } else {
+            // (ul, lr)
+            aspect_case.w = 0;
+            aspect_case.h = 1;
+        }
 
-        properties->moved_center = 1;
-//            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
-//            printf("WINDOWCursor is at %lf, %lf\n", pos_x, pos_y);
+        // compute the aspect we have and compare against the aspect we need. Based on that, move either the ul or lr corner
+        float delta_x = properties->selection_lr_x - properties->selection_ul_x;
+        float delta_y = properties->selection_lr_y - properties->selection_ul_y;
+        float aspect_current = delta_x / delta_y;
+
+        if (aspect_current < properties->aspect) {
+            // increase width
+            float delta_x_new = properties->aspect * delta_y;
+            if (aspect_case.w) {
+                // move lr corner to the right
+                properties->selection_lr_x = properties->selection_ul_x + delta_x_new;
+            } else {
+                // move ul corner to the left
+                properties->selection_ul_x = properties->selection_lr_x - delta_x_new;
+            }
+        } else if (aspect_current > properties->aspect) {
+            //increase height
+            float delta_y_new = delta_x / properties->aspect;
+            if (aspect_case.h) {
+                // move lr corner down
+                properties->selection_lr_y = properties->selection_ul_y + delta_y_new;
+            } else {
+                // move ul corner up
+                properties->selection_ul_y = properties->selection_lr_y - delta_y_new;
+            }
+        }
     } else {
-        properties->moved_center = 0;
+        pressed_states[MOUSE_STATE] = 0;
+
+        properties->selection_ul_x = 0.0f;
+        properties->selection_ul_y = 0.0f;
+        properties->selection_lr_x = 0.0f;
+        properties->selection_lr_y = 0.0f;
+        properties->selection_start_x = 0.0f;
+        properties->selection_start_y = 0.0f;
     }
 }
