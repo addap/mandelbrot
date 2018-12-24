@@ -3,12 +3,14 @@
 int main(int argc, char **argv) {
     properties_t properties = {
             .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
+            .submit_selection = 1,
     };
 
     properties.height = 2.0,
     properties.width = properties.aspect * properties.height;
-    properties.origin_x = - properties.width / 2;
+    properties.origin_x = - 0.5 - properties.width / 2;
     properties.origin_y = properties.height / 2;
+
 
     // Create window and set context
     GLFWwindow* window = createWindow();
@@ -21,8 +23,6 @@ int main(int argc, char **argv) {
 
     // create pixel array, curiously I have to declare it as a multi-dimensional array and not as a single array with size HEIGHT*WIDTH*3 even though both result in the same block of contiguous memory
     unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3];
-    mandelbrot_rect(properties.origin_x, properties.origin_y, properties.width, properties.height, pixels);
-
 
     // create texture
     GLuint texture;
@@ -37,8 +37,6 @@ int main(int argc, char **argv) {
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, (void*)pixels);
 
     GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
     GLint cursor_location = glGetUniformLocation(shaderProgram, "cursor");
@@ -61,6 +59,12 @@ int main(int argc, char **argv) {
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // if we have submitted a new selection
+        if (properties.submit_selection) {
+            properties.submit_selection = 0;
+            mandelbrot_rect(&properties, pixels);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, (void*)pixels);
+        }
 
         // use shader program
         glUseProgram(shaderProgram);

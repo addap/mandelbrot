@@ -9,6 +9,6 @@
 #include <stdio.h>
 #include <math.h>
 
-void mandelbrot_rect(double origin_x, double origin_y, double width, double height, unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3]);
+void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3]);
 
 #endif //MANDELBROT_MANDELBROT_H

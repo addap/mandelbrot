@@ -64,6 +64,7 @@ void process_input(GLFWwindow *window, properties_t *properties) {
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
         if (!pressed_states[MOUSE_STATE]) {
             pressed_states[MOUSE_STATE] = 1;
+
             properties->selection_start_x = pos_x;
             properties->selection_start_y = pos_y;
         }
@@ -119,13 +120,25 @@ void process_input(GLFWwindow *window, properties_t *properties) {
             }
         }
     } else {
-        pressed_states[MOUSE_STATE] = 0;
+        if (pressed_states[MOUSE_STATE]) {
+            pressed_states[MOUSE_STATE] = 0;
+            properties->submit_selection = 1;
 
-        properties->selection_ul_x = 0.0f;
-        properties->selection_ul_y = 0.0f;
-        properties->selection_lr_x = 0.0f;
-        properties->selection_lr_y = 0.0f;
-        properties->selection_start_x = 0.0f;
-        properties->selection_start_y = 0.0f;
+            print_rect(properties);
+            print_view(properties);
+            properties->origin_x = properties->origin_x + (properties->selection_ul_x / SCREEN_WIDTH) * properties->width;
+            properties->origin_y = properties->origin_y - (properties->selection_ul_y / SCREEN_HEIGHT) * properties->height;
+
+            properties->width = ((properties->selection_lr_x - properties->selection_ul_x) / SCREEN_WIDTH) * properties->width;
+            properties->height = ((properties->selection_lr_y - properties->selection_ul_y) / SCREEN_HEIGHT) * properties->height;
+            print_view(properties);
+        } else {
+            properties->selection_ul_x = 0.0f;
+            properties->selection_ul_y = 0.0f;
+            properties->selection_lr_x = 0.0f;
+            properties->selection_lr_y = 0.0f;
+            properties->selection_start_x = 0.0f;
+            properties->selection_start_y = 0.0f;
+        }
     }
 }

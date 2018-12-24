@@ -4,16 +4,21 @@
 
 #include "mandelbrot.h"
 
-void mandelbrot_rect(double origin_x, double origin_y, double width, double height, unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3]) {
+double square (double a) {
+    return a * a;
+}
 
-    double delta_x = width / SCREEN_WIDTH;
-    double delta_y = height / SCREEN_HEIGHT;
+void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3]) {
 
-    double val_x = origin_x;
-    double val_y = origin_y;
+    double delta_x = properties->width / SCREEN_WIDTH;
+    double delta_y = properties->height / SCREEN_HEIGHT;
+
+    print_view(properties);
+    double val_x = properties->origin_x;
+    double val_y = properties->origin_y;
 
     unsigned char max_val = 255;
-    unsigned int max_iter = 100;
+    unsigned int max_iter = 500;
     unsigned int iter = 0;
 
     double a = 0.0f;
@@ -23,8 +28,23 @@ void mandelbrot_rect(double origin_x, double origin_y, double width, double heig
     double tmp_a = 0.0f;
 
     for (unsigned int y = 0; y < SCREEN_HEIGHT; y++) {
-        val_x = origin_x;
+        val_x = properties->origin_x;
         for (unsigned int x = 0; x < SCREEN_WIDTH; x++) {
+
+            //DOES NOT WORK ATM
+//            //perform the cardioid check
+//            double q = square(val_x - 0.25) + square(val_y);
+//            double p = q * (q + (val_x - 0.25));
+//            // and the period-2 bulb check
+//            q = square(val_x + 1) + square(val_y);
+//
+//            if (p <= 0.25 * square(val_y) || q <= 0.0625) {
+//                pixels[y][x][0] = 0;
+//                pixels[y][x][1] = 0;
+//                pixels[y][x][2] = 0;
+//                return;
+//            }
+
             a = b = tmp_a = a_sqr = b_sqr = 0.0f;
             iter = 0;
 
