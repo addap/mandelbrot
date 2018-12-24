@@ -13,7 +13,7 @@ const float vertices[] = {
 
 const unsigned int indices[] = {
         0, 1, 2,
-        1, 3, 2
+        1, 2, 3
 };
 
 
