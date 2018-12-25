@@ -55,6 +55,10 @@ void process_input(GLFWwindow *window, properties_t *properties) {
         glfwSetWindowShouldClose(window, 1);
     }
 
+    if (key_pressed(window, GLFW_KEY_E)) {
+        init_properties(properties);
+    }
+
     // get new cursor position
     glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
     float pos_x = (float)x_pos_new;

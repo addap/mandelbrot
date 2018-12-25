@@ -7,13 +7,13 @@
 void init_properties(properties_t *p) {
     p->aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT;
     p->submit_selection = 1;
-    p->precision = 128;
-    p->rounding_mode = MPC_RNDNN;
+//    p->precision = 128;
+//    p->rounding_mode = MPC_RNDNN;
 
-    mpc_init2(p->height, p->precision);
-    mpc_init2(p->width, p->precision);
-    mpc_init2(p->origin_x, p->precision);
-    mpc_init2(p->origin_y, p->precision);
+//    mpc_init2(p->height, p->precision);
+//    mpc_init2(p->width, p->precision);
+//    mpc_init2(p->origin_x, p->precision);
+//    mpc_init2(p->origin_y, p->precision);
     
     p->height = 2.0;
     p->width = p->aspect * p->height;

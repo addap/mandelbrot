@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv) {
     properties_t properties;
-    init_properties(properties);
+    init_properties(&properties);
 
     // Create window and set context
     GLFWwindow* window = createWindow();
