@@ -31,7 +31,7 @@ typedef struct {
     float selection_start_y;
 } properties_t;
 
-    #define SCREEN_WIDTH 800
-    #define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
 
 #endif //MANDELBROT_PROPERTIES_H
