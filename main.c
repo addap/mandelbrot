@@ -1,16 +1,8 @@
 #include "main.h"
 
 int main(int argc, char **argv) {
-    properties_t properties = {
-            .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
-            .submit_selection = 1,
-    };
-
-    properties.height = 2.0,
-    properties.width = properties.aspect * properties.height;
-    properties.origin_x = - 0.5 - properties.width / 2;
-    properties.origin_y = properties.height / 2;
-
+    properties_t properties;
+    init_properties(properties);
 
     // Create window and set context
     GLFWwindow* window = createWindow();
