@@ -14,21 +14,26 @@ void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGH
     double delta_y = properties->height / SCREEN_HEIGHT;
 
     print_view(properties);
-    double val_x = properties->origin_x;
-    double val_y = properties->origin_y;
+    mpc_t val;
+    mpc_init2(val, properties->precision);
 
     unsigned char max_val = 255;
     unsigned int max_iter = 500;
     unsigned int iter = 0;
 
-    double a = 0.0f;
-    double b = 0.0f;
-    double a_sqr = 0.0f;
-    double b_sqr = 0.0f;
-    double tmp_a = 0.0f;
+    mpc_t a, border;
+    mpc_init2(a, properties->precision);
+    mpc_init2(border, 12);
+    mpc_set_ui(border, 2, properties->rounding_mode);
+
+//    mpc_init2(b, properties->precision);
+//    mpc_init2(a_sqr, properties->precision);
+//    mpc_init2(b_sqr, properties->precision);
+//    mpc_init2(a_tmp, properties->precision);
 
     for (unsigned int y = 0; y < SCREEN_HEIGHT; y++) {
-        val_x = properties->origin_x;
+        mpc_set(val_x, properties->origin_x, properties->rounding_mode);
+
         for (unsigned int x = 0; x < SCREEN_WIDTH; x++) {
 
             //DOES NOT WORK ATM
@@ -45,15 +50,17 @@ void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGH
 //                return;
 //            }
 
-            a = b = tmp_a = a_sqr = b_sqr = 0.0f;
+            mpc_set_ui(a, 0, properties->rounding_mode);
+//            mpc_set_ui(b, 0, properties->rounding_mode);
+//            mpc_set_ui(a_sqr, 0, properties->rounding_mode);
+//            mpc_set_ui(b_sqr, 0, properties->rounding_mode);
+//            mpc_set_ui(a_tmp, 0, properties->rounding_mode);
+
             iter = 0;
 
-            while (a_sqr + b_sqr <= 4.0 && iter < max_iter) {
-                tmp_a = a_sqr - b_sqr + val_x;
-                b = 2 * a * b + val_y;
-                a = tmp_a;
-                a_sqr = a*a;
-                b_sqr = b*b;
+            while (mpc_cmp(a, border) <= 0 && iter < max_iter) {
+                mpc_sqr(a, a, properties->rounding_mode);
+
 
                 iter++;
             }

@@ -6,15 +6,14 @@
 #define MANDELBROT_PROPERTIES_H
 
 #include <stdio.h>
-//#include <mpc.h>
+#include <mpc.h>
 
 typedef struct {
-    double width;
-    double height;
-    float aspect;
+    mpfr_t width;
+    mpfr_t height;
+    double aspect;
 
-    double origin_x;
-    double origin_y;
+    mpc_t origin;
 
     float selection_ul_x;
     float selection_ul_y;
@@ -26,8 +25,8 @@ typedef struct {
 
     int submit_selection;
 
-//    mpfr_prec_t precision;
-//    mpc_rnd_t rounding_mode;
+    mpfr_prec_t precision;
+    mpc_rnd_t rounding_mode;
 } properties_t;
 
 #define SCREEN_WIDTH 1600
