@@ -6,27 +6,28 @@
 #define MANDELBROT_PROPERTIES_H
 
 #include <stdio.h>
-#include <mpc.h>
+#include "mpfr.h"
 
 typedef struct {
     mpfr_t width;
     mpfr_t height;
     double aspect;
 
-    mpc_t origin;
+    mpfr_t origin_x;
+    mpfr_t origin_y;
 
-    float selection_ul_x;
-    float selection_ul_y;
-    float selection_lr_x;
-    float selection_lr_y;
+    double selection_ul_x;
+    double selection_ul_y;
+    double selection_lr_x;
+    double selection_lr_y;
 
-    float selection_start_x;
-    float selection_start_y;
+    double selection_start_x;
+    double selection_start_y;
 
     int submit_selection;
 
     mpfr_prec_t precision;
-    mpc_rnd_t rounding_mode;
+    mpfr_rnd_t rounding_mode;
 } properties_t;
 
 #define SCREEN_WIDTH 1600

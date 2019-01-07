@@ -10,12 +10,10 @@ add_executable(mandelbrot
 target_link_libraries(mandelbrot
         GL
         glfw
-        X11
-        pthread
-        Xrandr
-        Xi
         m
-        dl)
+        dl
+        mpc
+        mpfr)
 
 target_compile_options(mandelbrot PRIVATE
         -Wall

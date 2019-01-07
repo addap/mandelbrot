@@ -4,11 +4,6 @@ int main(int argc, char **argv) {
     properties_t properties;
     init_properties(&properties);
 
-    properties.height = 2.0,
-    properties.width = properties.aspect * properties.height;
-    properties.origin_x = - properties.width / 2;
-    properties.origin_y = properties.height / 2;
-
     // Create window and set context
     GLFWwindow* window = createWindow();
 

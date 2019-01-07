@@ -10,12 +10,20 @@ double square (double a) {
 
 void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3]) {
 
-    double delta_x = properties->width / SCREEN_WIDTH;
-    double delta_y = properties->height / SCREEN_HEIGHT;
+    mpfr_t delta_x, delta_y;
+    mpfr_init2(delta_x, properties->precision);
+    mpfr_init2(delta_y, properties->precision);
+
+    mpfr_div_d(delta_x, properties->width, SCREEN_WIDTH, properties->rounding_mode);
+    mpfr_div_d(delta_y, properties->height, SCREEN_HEIGHT, properties->rounding_mode);
 
     print_view(properties);
     mpc_t val;
+    mpfr_t val_x;
+    mpfr_t val_y;
     mpc_init2(val, properties->precision);
+    mpfr_init2(val_x, properties->precision);
+    mpfr_init2(val_y, properties->precision);
 
     unsigned char max_val = 255;
     unsigned int max_iter = 500;
@@ -23,44 +31,23 @@ void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGH
 
     mpc_t a, border;
     mpc_init2(a, properties->precision);
-    mpc_init2(border, 12);
+    mpc_init2(border, properties->precision);
     mpc_set_ui(border, 2, properties->rounding_mode);
 
-//    mpc_init2(b, properties->precision);
-//    mpc_init2(a_sqr, properties->precision);
-//    mpc_init2(b_sqr, properties->precision);
-//    mpc_init2(a_tmp, properties->precision);
+    mpfr_set(val_y, properties->origin_y, properties->rounding_mode);
+    int rnd = MPC_RNDNN;
 
     for (unsigned int y = 0; y < SCREEN_HEIGHT; y++) {
-        mpc_set(val_x, properties->origin_x, properties->rounding_mode);
+        mpfr_set(val_x, properties->origin_x, properties->rounding_mode);
 
         for (unsigned int x = 0; x < SCREEN_WIDTH; x++) {
-
-            //DOES NOT WORK ATM
-//            //perform the cardioid check
-//            double q = square(val_x - 0.25) + square(val_y);
-//            double p = q * (q + (val_x - 0.25));
-//            // and the period-2 bulb check
-//            q = square(val_x + 1) + square(val_y);
-//
-//            if (p <= 0.25 * square(val_y) || q <= 0.0625) {
-//                pixels[y][x][0] = 0;
-//                pixels[y][x][1] = 0;
-//                pixels[y][x][2] = 0;
-//                return;
-//            }
-
-            mpc_set_ui(a, 0, properties->rounding_mode);
-//            mpc_set_ui(b, 0, properties->rounding_mode);
-//            mpc_set_ui(a_sqr, 0, properties->rounding_mode);
-//            mpc_set_ui(b_sqr, 0, properties->rounding_mode);
-//            mpc_set_ui(a_tmp, 0, properties->rounding_mode);
-
+            mpc_set_fr_fr(val, val_x, val_y, rnd);
+            mpc_set_ui(a, 0, rnd);
             iter = 0;
 
             while (mpc_cmp(a, border) <= 0 && iter < max_iter) {
-                mpc_sqr(a, a, properties->rounding_mode);
-
+                mpc_sqr(a, a, rnd);
+                mpc_add(a, a, val, rnd);
 
                 iter++;
             }
@@ -78,8 +65,8 @@ void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGH
                 pixels[y][x][2] = c;
             }
 
-            val_x += delta_x;
+            mpfr_add(val_x, val_x, delta_x, properties->rounding_mode);
         }
-        val_y -= delta_y;
+        mpfr_sub(val_y, val_y, delta_y, properties->rounding_mode);
     }
 }

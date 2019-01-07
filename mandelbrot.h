@@ -6,6 +6,7 @@
 #define MANDELBROT_MANDELBROT_H
 
 #include "properties.h"
+#include "mpc.h"
 #include <stdio.h>
 #include <math.h>
 
