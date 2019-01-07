@@ -4,36 +4,63 @@
 
 #include "mandelbrot.h"
 
-void mandelbrot_rect(double origin_x, double origin_y, double width, double height, unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3]) {
+double square (double a) {
+    return a * a;
+}
 
-    double delta_x = width / SCREEN_WIDTH;
-    double delta_y = height / SCREEN_HEIGHT;
+void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3]) {
 
-    double val_x = origin_x;
-    double val_y = origin_y;
+    double delta_x = properties->width / SCREEN_WIDTH;
+    double delta_y = properties->height / SCREEN_HEIGHT;
+
+    print_view(properties);
+    mpc_t val;
+    mpc_init2(val, properties->precision);
 
     unsigned char max_val = 255;
-    unsigned int max_iter = 100;
+    unsigned int max_iter = 500;
     unsigned int iter = 0;
 
-    double a = 0.0f;
-    double b = 0.0f;
-    double a_sqr = 0.0f;
-    double b_sqr = 0.0f;
-    double tmp_a = 0.0f;
+    mpc_t a, border;
+    mpc_init2(a, properties->precision);
+    mpc_init2(border, 12);
+    mpc_set_ui(border, 2, properties->rounding_mode);
+
+//    mpc_init2(b, properties->precision);
+//    mpc_init2(a_sqr, properties->precision);
+//    mpc_init2(b_sqr, properties->precision);
+//    mpc_init2(a_tmp, properties->precision);
 
     for (unsigned int y = 0; y < SCREEN_HEIGHT; y++) {
-        val_x = origin_x;
+        mpc_set(val_x, properties->origin_x, properties->rounding_mode);
+
         for (unsigned int x = 0; x < SCREEN_WIDTH; x++) {
-            a = b = tmp_a = a_sqr = b_sqr = 0.0f;
+
+            //DOES NOT WORK ATM
+//            //perform the cardioid check
+//            double q = square(val_x - 0.25) + square(val_y);
+//            double p = q * (q + (val_x - 0.25));
+//            // and the period-2 bulb check
+//            q = square(val_x + 1) + square(val_y);
+//
+//            if (p <= 0.25 * square(val_y) || q <= 0.0625) {
+//                pixels[y][x][0] = 0;
+//                pixels[y][x][1] = 0;
+//                pixels[y][x][2] = 0;
+//                return;
+//            }
+
+            mpc_set_ui(a, 0, properties->rounding_mode);
+//            mpc_set_ui(b, 0, properties->rounding_mode);
+//            mpc_set_ui(a_sqr, 0, properties->rounding_mode);
+//            mpc_set_ui(b_sqr, 0, properties->rounding_mode);
+//            mpc_set_ui(a_tmp, 0, properties->rounding_mode);
+
             iter = 0;
 
-            while (a_sqr + b_sqr <= 4.0 && iter < max_iter) {
-                tmp_a = a_sqr - b_sqr + val_x;
-                b = 2 * a * b + val_y;
-                a = tmp_a;
-                a_sqr = a*a;
-                b_sqr = b*b;
+            while (mpc_cmp(a, border) <= 0 && iter < max_iter) {
+                mpc_sqr(a, a, properties->rounding_mode);
+
 
                 iter++;
             }

@@ -37,25 +37,25 @@ void main()
 
 
     double a = 0.0;
-        double b = 0.0;
-        double a_tmp = 0.0;
-        double iteration = 0.0;
-        // DAS ANPASSEN, VERLANGSAMT ABER STARK
-        double max_iter = 500.0;
+    double b = 0.0;
+    double a_tmp = 0.0;
+    double iteration = 0.0;
+    // DAS ANPASSEN, VERLANGSAMT ABER STARK
+    double max_iter = 500.0;
 
-        double a_sqr = a * a;
-        double b_sqr = b * b;
+    double a_sqr = a * a;
+    double b_sqr = b * b;
 
-        while (a_sqr + b_sqr <= 4.0 && iteration < max_iter) {
-            a_tmp = a_sqr - b_sqr + xy.x;
-            b = a * b;
-            b += b + xy.y;
-            a = a_tmp;
+    while (a_sqr + b_sqr <= 4.0 && iteration < max_iter) {
+        a_tmp = a_sqr - b_sqr + xy.x;
+        b = a * b;
+        b += b + xy.y;
+        a = a_tmp;
 
-            a_sqr = a * a;
-            b_sqr = b * b;
-            iteration++;
-        }
+        a_sqr = a * a;
+        b_sqr = b * b;
+        iteration++;
+    }
 
     // wichtig um dem Farbverlauf nicht linear zu machen
     double factor = sqrt(iteration / max_iter);

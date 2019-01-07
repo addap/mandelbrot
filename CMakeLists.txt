@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 add_executable(mandelbrot
         main.c
-        glad.c window.c window.h main.h shader.c shader.h input.c input.h properties.h mandelbrot.c mandelbrot.h)
+        glad.c window.c window.h main.h shader.c shader.h input.c input.h properties.h mandelbrot.c mandelbrot.h properties.c)
 
 target_link_libraries(mandelbrot
         GL
