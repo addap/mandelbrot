@@ -42,18 +42,31 @@ void mandelbrot_rect(properties_t *properties, unsigned char pixels[SCREEN_HEIGH
 
         for (unsigned int x = 0; x < SCREEN_WIDTH; x++) {
             mpc_set_fr_fr(val, val_x, val_y, rnd);
+//            if (y == 0) {
+//                char * val_str = mpc_get_str(10, 0, val, properties->rounding_mode);
+//                printf("Checking pixel (%u, %u) at %s\n", x, y, val_str);
+//                mpc_free_str(val_str);
+//            }
             mpc_set_ui(a, 0, rnd);
             iter = 0;
+            int cmp;
+            int re = 0;
+            int im = 0;
 
-            while (mpc_cmp(a, border) <= 0 && iter < max_iter) {
+            while (re <= 0 && im <= 0 && iter < max_iter) {
                 mpc_sqr(a, a, rnd);
                 mpc_add(a, a, val, rnd);
 
+                cmp = mpc_cmp(a, border);
+                re = MPC_INEX_RE(cmp);
+                im = MPC_INEX_IM(cmp);
                 iter++;
             }
+//            printf("%u\n", iter);
 
             double factor = sqrt((double)iter / max_iter);
             unsigned char c = (unsigned char)lround(factor * 255);
+//            printf("%hhu\n", c);
 
             if (iter == max_iter) {
                 pixels[y][x][0] = 0;

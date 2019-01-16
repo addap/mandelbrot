@@ -10,9 +10,6 @@ int DOWN_STATE = 1;
 int E_STATE = 2;
 int MOUSE_STATE = 3;
 
-double x_pos_new, x_pos_scaled;
-double y_pos_new, y_pos_scaled;
-
 int code_to_index(int code) {
     switch (code) {
         case GLFW_KEY_UP:
@@ -60,9 +57,8 @@ void process_input(GLFWwindow *window, properties_t *properties) {
     }
 
     // get new cursor position
-    glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
-    float pos_x = (float)x_pos_new;
-    float pos_y = (float)y_pos_new;
+    double pos_x, pos_y;
+    glfwGetCursorPos(window, &pos_x, &pos_y);
     aspect_case_t aspect_case;
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {

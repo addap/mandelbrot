@@ -15,10 +15,10 @@ void init_properties(properties_t *p) {
     mpfr_init2(p->origin_x, p->precision);
     mpfr_init2(p->origin_y, p->precision);
 
-    double width = 2.0;
-    double height = width * p->aspect;
-    mpfr_set_d(p->height, width, p->rounding_mode);
-    mpfr_set_d(p->width,  height, p->rounding_mode);
+    double height = 2.0;
+    double width = p->aspect * height;
+    mpfr_set_d(p->width,  width, p->rounding_mode);
+    mpfr_set_d(p->height, height, p->rounding_mode);
 
     mpfr_set_d(p->origin_x, -0.5 - width / 2, p->rounding_mode);
     mpfr_set_d(p->origin_y, height / 2, p->rounding_mode);
@@ -32,7 +32,7 @@ void print_view(properties_t *p) {
     width_str = mpfr_get_str(NULL, &width_exp, 10, 0, p->width, p->rounding_mode);
     height_str = mpfr_get_str(NULL, &height_exp, 10, 0, p->height, p->rounding_mode);
 
-    printf("Origin: (%s, %s)\tMeasures: (%s, %s)\n", origin_x_str, origin_y_str, width_str, height_str);
+    printf("Origin: (%sE%ld, %sE%ld)\tMeasures: (%sE%ld, %sE%ld)\n", origin_x_str, origin_x_exp, origin_y_str, origin_y_exp, width_str, width_exp, height_str, height_exp);
 
     mpfr_free_str(origin_x_str);
     mpfr_free_str(origin_y_str);
