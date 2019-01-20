@@ -2,7 +2,7 @@
 // Created by adrian on 21.12.18.
 //
 
-#include "shader.h"
+#include "../Headers/shader.h"
 
 const char* vertexShaderSourceFile = "../vertex-shader-id.glsl";
 const char* fragmentShaderSourceFile = "../fragment-border.glsl";

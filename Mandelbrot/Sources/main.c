@@ -1,4 +1,4 @@
-#include "main.h"
+#include "Mandelbrot/Headers/main.h"
 
 int main(int argc, char **argv) {
     properties_t properties = {

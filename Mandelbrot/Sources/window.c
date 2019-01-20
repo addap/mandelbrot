@@ -2,7 +2,7 @@
 // Created by adrian on 21.12.18.
 //
 
-#include "window.h"
+#include "../Headers/window.h"
 
 const float vertices[] = {
         -1.0f, -1.0f, 0.0f,  0.0f, 0.0f,
