@@ -2,7 +2,7 @@
 // Created by adrian on 23.12.18.
 //
 
-#include "../Headers/mandelbrot.h"
+#include "mandelbrot.h"
 
 double square (double a) {
     return a * a;

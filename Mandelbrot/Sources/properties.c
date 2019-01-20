@@ -2,7 +2,7 @@
 // Created by adrian on 24.12.18.
 //
 
-#include "../Headers/properties.h"
+#include "properties.h"
 
 void print_view(properties_t *p) {
     printf("Origin: (%lf, %lf)\tMeasures: (%lf, %lf)\n", p->origin_x, p->origin_y, p->width, p->height);

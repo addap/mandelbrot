@@ -2,7 +2,7 @@
 // Created by adrian on 23.12.18.
 //
 
-#include "../Headers/input.h"
+#include "input.h"
 
 int pressed_states[4];
 int UP_STATE = 0;

@@ -5,7 +5,7 @@
 #ifndef MANDELBROT_SHADER_H
 #define MANDELBROT_SHADER_H
 
-#include "../../include/glad/glad.h"
+#include <glad/glad.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

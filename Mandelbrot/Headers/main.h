@@ -7,9 +7,9 @@
 
 //#include <math.h>
 #include "mandelbrot.h"
+#include "input.h"
 #include "window.h"
 #include "shader.h"
-#include "input.h"
 #include "properties.h"
 
 
