@@ -3,15 +3,26 @@
 //
 
 #include "shader.h"
+#include <unistd.h>
 
-const char* vertexShaderSourceFile = "../vertex-shader-id.glsl";
-const char* fragmentShaderSourceFile = "../escape-algorithm-colors.glsl";
+const char* vertexShaderSourceFile = "Shaders/vertex-shader-id.glsl";
+const char* fragmentShaderSourceFile = "Shaders/fragment-border.glsl";
 
 const char* readFile(const char *file_url) {
-    FILE* file = fopen(file_url, "r");
+//    char buf[1024];
+//    char *cwd = getcwd(buf, 1024);
+//
+//    if (!cwd) {
+//        printf("Failed to get current dir.\n");
+//        exit(1);
+//    } else {
+//        printf("%s\n", cwd);
+//    }
+
+    FILE* file = fopen(file_url, "rb");
 
     if (!file) {
-        printf("Could not open file");
+        printf("Could not open file\n");
         exit(1);
     }
 
@@ -23,7 +34,8 @@ const char* readFile(const char *file_url) {
     size_t pos = 0;
 
     if (!buffer) {
-        printf("Could not create buffer");
+        printf("Could not create buffer\n");
+        exit(1);
     }
 
     while (1) {
@@ -32,13 +44,16 @@ const char* readFile(const char *file_url) {
             fclose(file);
             break;
         } else {
-            printf("Have to read more");
+            printf("Have to read more\n");
             // else we did not read the whole file
+            printf("%s\n", buffer);
             pos = strlen(buffer);
+            printf("Size: %llu, Pos: %llu", size, pos);
             fseek(file, pos, SEEK_SET);
         }
 
     }
+
     return buffer;
 }
 

@@ -1,0 +1,8 @@
+[submodule "Mandelbrot/Vendor/glad"]
+	path = Mandelbrot/Vendor/glad
+	url = git@github.com:Dav1dde/glad.git
+	branch = c
+[submodule "Mandelbrot/Vendor/glfw"]
+	path = Mandelbrot/Vendor/glfw
+	url = git@github.com:glfw/glfw.git
+	branch = master

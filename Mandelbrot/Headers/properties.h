@@ -5,22 +5,15 @@
 #ifndef MANDELBROT_PROPERTIES_H
 #define MANDELBROT_PROPERTIES_H
 
+#include <stdio.h>
+
 typedef struct {
-    // How much the zoom_time increases/decreases per second
-    double zoom_scale;
-
-    // the pixel coordinates of the center
-    double pos_x;
-    double pos_y;
-
     double width;
     double height;
     float aspect;
 
-    double center_x;
-    double center_y;
-
-    int moved_center;
+    double origin_x;
+    double origin_y;
 
     float selection_ul_x;
     float selection_ul_y;
@@ -29,9 +22,14 @@ typedef struct {
 
     float selection_start_x;
     float selection_start_y;
+
+    int submit_selection;
 } properties_t;
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
+
+void print_view(properties_t *p);
+void print_rect(properties_t *p);
 
 #endif //MANDELBROT_PROPERTIES_H
