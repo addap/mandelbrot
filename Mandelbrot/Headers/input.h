@@ -14,6 +14,7 @@
 
 #define ZOOM_THRESHOLD 0.0625f
 
-void process_input(GLFWwindow *window, properties_t *properties);
+void process_input_cpu(GLFWwindow *window, properties_t *properties);
+void process_input_gpu(GLFWwindow *window, properties_t *properties);
 
 #endif //MANDELBROT_INPUT_H

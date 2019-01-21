@@ -5,8 +5,10 @@
 #include "shader.h"
 #include <unistd.h>
 
-const char* vertexShaderSourceFile = "Shaders/vertex-shader-id.glsl";
-const char* fragmentShaderSourceFile = "Shaders/fragment-border.glsl";
+const char* vertexShaderSourceFile_cpu = "Shaders/vertex-shader-with-tex.glsl";
+const char* vertexShaderSourceFile_gpu = "Shaders/vertex-shader-id.glsl";
+const char* fragmentShaderSourceFile_cpu = "Shaders/fragment-border.glsl";
+const char* fragmentShaderSourceFile_gpu = "Shaders/escape-algorithm-optimized.glsl";
 
 const char* readFile(const char *file_url) {
 //    char buf[1024];
@@ -57,11 +59,16 @@ const char* readFile(const char *file_url) {
     return buffer;
 }
 
-GLuint generateShaderProgram() {
+GLuint generateShaderProgram(int cpu) {
     //Vertex Shader
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const char* vertexShaderSource = readFile(vertexShaderSourceFile);
+    const char* vertexShaderSource;
+    if (cpu) {
+        vertexShaderSource = readFile(vertexShaderSourceFile_cpu);
+    } else {
+        vertexShaderSource = readFile(vertexShaderSourceFile_gpu);
+    }
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
 
@@ -77,7 +84,12 @@ GLuint generateShaderProgram() {
     // Fragment Shader
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const char* fragmentShaderSource = readFile(fragmentShaderSourceFile);
+    const char* fragmentShaderSource;
+    if (cpu) {
+        fragmentShaderSource = readFile(fragmentShaderSourceFile_cpu);
+    } else {
+        fragmentShaderSource = readFile(fragmentShaderSourceFile_gpu);
+    }
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 

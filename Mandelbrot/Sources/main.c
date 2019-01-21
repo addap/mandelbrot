@@ -1,14 +1,36 @@
 #include "main.h"
 
+int start_cpu();
+int start_gpu();
+
+void usage (char **argv) {
+    printf("usage: %s cpu | gpu\n", argv[0]);
+    exit(1);
+}
 
 int main(int argc, char **argv) {
+
+    if (argc < 2) {
+        usage(argv);
+    }
+
+    if (strcmp(argv[1], "cpu") == 0) {
+        return start_cpu();
+    } else if (strcmp(argv[1], "gpu") == 0) {
+        return start_gpu();
+    } else {
+        usage(argv);
+    }
+}
+
+int start_cpu() {
     properties_t properties = {
             .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
             .submit_selection = 1,
     };
 
     properties.height = 2.0,
-    properties.width = properties.aspect * properties.height;
+            properties.width = properties.aspect * properties.height;
     properties.origin_x = - 0.5 - properties.width / 2;
     properties.origin_y = properties.height / 2;
 
@@ -20,7 +42,7 @@ int main(int argc, char **argv) {
     GLuint VAO = createArrayBuffer();
 
     // create shader program
-    GLuint shaderProgram = generateShaderProgram();
+    GLuint shaderProgram = generateShaderProgram(1);
 
     // create pixel array, curiously I have to declare it as a multi-dimensional array and not as a single array with size HEIGHT*WIDTH*3 even though both result in the same block of contiguous memory
     unsigned char pixels[SCREEN_HEIGHT][SCREEN_WIDTH][3];
@@ -54,7 +76,7 @@ int main(int argc, char **argv) {
 
     while (!glfwWindowShouldClose(window)) {
 
-        process_input(window, &properties);
+        process_input_cpu(window, &properties);
 
         // Clear Screen
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
@@ -90,6 +112,80 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+int start_gpu() {
+    properties_t properties = {
+            .aspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT,
+            .submit_selection = 1,
+            .zoom_scale = 1,
+    };
+
+    properties.height = 2.0,
+    properties.width = properties.aspect * properties.height;
+    properties.origin_x = - 0.5 - properties.width / 2;
+    properties.origin_y = properties.height / 2;
+
+
+    // Create window and set context
+    GLFWwindow* window = createWindow();
+
+    // Create OpenGL Objects
+    GLuint VAO = createArrayBuffer();
+
+    // create shader program
+    GLuint shaderProgram = generateShaderProgram(0);
+
+    double time = 0.0f;
+    double time_old = 0.0f;
+    double time_delta = 0.0f;
+    // how much zoom the current time equates to
+    double zoom_time = 0.0f;
+    // The current zoom level
+    double zoom = 1.0f;
+
+    GLint wh_location = glGetUniformLocation(shaderProgram, "wh");
+    GLint screen_location = glGetUniformLocation(shaderProgram, "screen");
+    GLint center_location = glGetUniformLocation(shaderProgram, "center");
+
+    // upload the screen dimensions to the gpu
+    glUseProgram(shaderProgram);
+    glUniform2d(screen_location, (double)SCREEN_WIDTH, (double)SCREEN_HEIGHT);
+    glUseProgram(0);
+
+    while (!glfwWindowShouldClose(window)) {
+        time = glfwGetTime();
+        time_delta = time - time_old;
+        time_old = time;
+        zoom_time = zoom_time + time_delta * properties.zoom_scale;
+        zoom = exp2(zoom_time);
+        properties.height = 2.0 / zoom;
+        properties.width = properties.aspect * properties.height;
+
+        // Clear Screen
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+        // now push it to the shader
+        glUniform2d(wh_location, properties.width, properties.height);
+        if (properties.moved_center) {
+            glUniform2d(center_location, properties.center_x, properties.center_y);
+        }
+//        printf("w: %lf, h: %lf, c: (%lf, %lf)\n", properties.width, properties.height, properties.center_x, properties.center_y);
+
+        //bind VAO to draw the triangles over the whole screen
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glUseProgram(0);
+        glBindVertexArray(0);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+        process_input_gpu(window, &properties);
+    }
+
+    glfwTerminate();
+    return 0;
+}
 
 
 

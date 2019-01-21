@@ -10,6 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-GLuint generateShaderProgram();
+GLuint generateShaderProgram(int cpu);
 
 #endif //MANDELBROT_SHADER_H

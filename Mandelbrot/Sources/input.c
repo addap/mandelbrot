@@ -16,11 +16,11 @@ double y_pos_new, y_pos_scaled;
 int code_to_index(int code) {
     switch (code) {
         case GLFW_KEY_UP:
-            return 0;
+            return UP_STATE;
         case GLFW_KEY_DOWN:
-            return 1;
+            return DOWN_STATE;
         case GLFW_KEY_E :
-            return 2;
+            return E_STATE;
         default:
             fprintf(stderr, "Unknown code to retrieve index from: (%d)", code);
             exit(1);
@@ -50,7 +50,7 @@ typedef struct {
     int h;
 } aspect_case_t;
 
-void process_input(GLFWwindow *window, properties_t *properties) {
+void process_input_cpu(GLFWwindow *window, properties_t *properties) {
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, 1);
     }
@@ -140,5 +140,53 @@ void process_input(GLFWwindow *window, properties_t *properties) {
             properties->selection_start_x = 0.0f;
             properties->selection_start_y = 0.0f;
         }
+    }
+}
+
+void process_input_gpu(GLFWwindow *window, properties_t *properties) {
+    if (key_pressed(window, GLFW_KEY_UP)) {
+        if (properties->zoom_scale < -ZOOM_THRESHOLD) {
+            properties->zoom_scale /= 2.0f;
+        } else if (properties->zoom_scale >= ZOOM_THRESHOLD) {
+            properties->zoom_scale *= 2.0f;
+        } else {
+            properties->zoom_scale = ZOOM_THRESHOLD;
+        }
+    }
+
+    if (key_pressed(window, GLFW_KEY_DOWN)) {
+        if (properties->zoom_scale <= -ZOOM_THRESHOLD) {
+            properties->zoom_scale *= 2.0f;
+        } else if (properties->zoom_scale > ZOOM_THRESHOLD) {
+            properties->zoom_scale /= 2.0f;
+        } else {
+            properties->zoom_scale = -ZOOM_THRESHOLD;
+        }
+    }
+
+
+    // get new cursor position
+    glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
+    if (key_pressed(window, GLFW_KEY_E)
+        && x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH
+        && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT)
+    {
+        // scale to screen coordinates
+        x_pos_scaled = x_pos_new / SCREEN_WIDTH;
+        y_pos_scaled = y_pos_new / SCREEN_HEIGHT;
+
+        // make relative to center
+        x_pos_scaled = x_pos_scaled - 0.5f;
+        y_pos_scaled = y_pos_scaled - 0.5f;
+
+        // calculate next center
+        properties->center_x = x_pos_scaled * properties->width + properties->center_x;
+        properties->center_y = y_pos_scaled * properties->height + properties->center_y;
+
+        properties->moved_center = 1;
+//            printf("Cursor is at %lf, %lf\n", x_pos_new, y_pos_new);
+//            printf("WINDOWCursor is at %lf, %lf\n", pos_x, pos_y);
+    } else {
+        properties->moved_center = 0;
     }
 }

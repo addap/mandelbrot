@@ -15,6 +15,9 @@ typedef struct {
     double origin_x;
     double origin_y;
 
+    double center_x;
+    double center_y;
+
     float selection_ul_x;
     float selection_ul_y;
     float selection_lr_x;
@@ -24,6 +27,9 @@ typedef struct {
     float selection_start_y;
 
     int submit_selection;
+    int moved_center;
+    double zoom_scale;
+
 } properties_t;
 
 #define SCREEN_WIDTH 800
