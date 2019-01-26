@@ -32,8 +32,8 @@ typedef struct {
 
 } properties_t;
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH 1600
+#define SCREEN_HEIGHT 900
 
 void print_view(properties_t *p);
 void print_rect(properties_t *p);

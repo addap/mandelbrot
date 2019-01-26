@@ -13,14 +13,24 @@ int MOUSE_STATE = 3;
 double x_pos_new, x_pos_scaled;
 double y_pos_new, y_pos_scaled;
 
+float zoom_speed_levels[] = { -16.0f, -8.0f, -4.0f, -2.0f, -1.0f, -0.5f, -0.25f, -0.125f, -0.0625f,
+                              0.0f, 0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, };
+int zoom_speed_level_min = 0;
+int zoom_speed_level_max = 18;
+int zoom_speed_index = 14;
+
+int clamp (int x) {
+    return (int)fminl(zoom_speed_level_max, fmaxl(x, zoom_speed_level_min));
+}
+
 int code_to_index(int code) {
     switch (code) {
         case GLFW_KEY_UP:
             return UP_STATE;
         case GLFW_KEY_DOWN:
             return DOWN_STATE;
-        case GLFW_KEY_E :
-            return E_STATE;
+        case GLFW_MOUSE_BUTTON_1 :
+            return MOUSE_STATE;
         default:
             fprintf(stderr, "Unknown code to retrieve index from: (%d)", code);
             exit(1);
@@ -32,9 +42,9 @@ int code_to_index(int code) {
 /// \param window The current GLFWwindow instance
 /// \param key_code The glfw code of the key to be checked
 /// \return true if the key has just been pressed and not held
-int key_pressed(GLFWwindow *window, int key_code) {
-    int index = code_to_index(key_code);
-    if (glfwGetKey(window, key_code) == GLFW_PRESS) {
+int input_pressed(GLFWwindow *window, int input_code, int(*func)(GLFWwindow *, int)) {
+    int index = code_to_index(input_code);
+    if ((*func)(window, input_code) == GLFW_PRESS) {
         if (!pressed_states[index]) {
             pressed_states[index] = 1;
             return 1;
@@ -43,6 +53,14 @@ int key_pressed(GLFWwindow *window, int key_code) {
         pressed_states[index] = 0;
     }
     return 0;
+}
+
+int key_pressed(GLFWwindow *window, int key_code) {
+    return input_pressed(window, key_code, &glfwGetKey);
+}
+
+int mouse_pressed(GLFWwindow *window, int mouse_code) {
+    return input_pressed(window, mouse_code, &glfwGetMouseButton);
 }
 
 typedef struct {
@@ -120,6 +138,14 @@ void process_input_cpu(GLFWwindow *window, properties_t *properties) {
             }
         }
     } else {
+        /* In normal input mode there are only two mouse button states
+         * So now it's GLFW_RELEASE.
+         * Unfortunately this does not allow us to differentiate if the mouse button has just been released or if it happened some time ago.
+         * Therefore, we need to keep track of this ourselves with the pressed_states array.
+         *
+         * If the mouse button was released just now we set the necessary properties to zoom in, otherwise we set
+         * the selection parameters to be non visible (//todo we could also pass a boolean to the shader)
+         */
         if (pressed_states[MOUSE_STATE]) {
             pressed_states[MOUSE_STATE] = 0;
             properties->submit_selection = 1;
@@ -133,41 +159,35 @@ void process_input_cpu(GLFWwindow *window, properties_t *properties) {
             properties->height = ((properties->selection_lr_y - properties->selection_ul_y) / SCREEN_HEIGHT) * properties->height;
             print_view(properties);
         } else {
-            properties->selection_ul_x = 0.0f;
-            properties->selection_ul_y = 0.0f;
-            properties->selection_lr_x = 0.0f;
-            properties->selection_lr_y = 0.0f;
-            properties->selection_start_x = 0.0f;
-            properties->selection_start_y = 0.0f;
+            float out_of_sight = -10.0f;
+            properties->selection_ul_x = out_of_sight;
+            properties->selection_ul_y = out_of_sight;
+            properties->selection_lr_x = out_of_sight;
+            properties->selection_lr_y = out_of_sight;
+            properties->selection_start_x = out_of_sight;
+            properties->selection_start_y = out_of_sight;
         }
     }
 }
 
 void process_input_gpu(GLFWwindow *window, properties_t *properties) {
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, 1);
+    }
+
     if (key_pressed(window, GLFW_KEY_UP)) {
-        if (properties->zoom_scale < -ZOOM_THRESHOLD) {
-            properties->zoom_scale /= 2.0f;
-        } else if (properties->zoom_scale >= ZOOM_THRESHOLD) {
-            properties->zoom_scale *= 2.0f;
-        } else {
-            properties->zoom_scale = ZOOM_THRESHOLD;
-        }
+       zoom_speed_index = clamp(zoom_speed_index + 1);
     }
 
     if (key_pressed(window, GLFW_KEY_DOWN)) {
-        if (properties->zoom_scale <= -ZOOM_THRESHOLD) {
-            properties->zoom_scale *= 2.0f;
-        } else if (properties->zoom_scale > ZOOM_THRESHOLD) {
-            properties->zoom_scale /= 2.0f;
-        } else {
-            properties->zoom_scale = -ZOOM_THRESHOLD;
-        }
+       zoom_speed_index = clamp(zoom_speed_index - 1);
     }
+    properties->zoom_scale = zoom_speed_levels[zoom_speed_index];
 
 
     // get new cursor position
     glfwGetCursorPos(window, &x_pos_new, &y_pos_new);
-    if (key_pressed(window, GLFW_KEY_E)
+    if (mouse_pressed(window, GLFW_MOUSE_BUTTON_1)
         && x_pos_new >= 0.0f && x_pos_new <= SCREEN_WIDTH
         && y_pos_new >= 0.0f && y_pos_new <= SCREEN_HEIGHT)
     {
