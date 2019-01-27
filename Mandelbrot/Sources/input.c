@@ -17,7 +17,7 @@ float zoom_speed_levels[] = { -16.0f, -8.0f, -4.0f, -2.0f, -1.0f, -0.5f, -0.25f,
                               0.0f, 0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, };
 int zoom_speed_level_min = 0;
 int zoom_speed_level_max = 18;
-int zoom_speed_index = 14;
+int zoom_speed_index = 12;
 
 int clamp (int x) {
     return (int)fminl(zoom_speed_level_max, fmaxl(x, zoom_speed_level_min));

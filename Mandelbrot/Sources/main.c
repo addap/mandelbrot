@@ -119,7 +119,7 @@ int start_gpu() {
             .zoom_scale = 1,
     };
 
-    properties.height = 2.0,
+    properties.height = 1.0,
     properties.width = properties.aspect * properties.height;
     properties.origin_x = - 0.5 - properties.width / 2;
     properties.origin_y = properties.height / 2;
@@ -157,7 +157,7 @@ int start_gpu() {
         time_old = time;
         zoom_time = zoom_time + time_delta * properties.zoom_scale;
         zoom = exp2(zoom_time);
-        properties.height = 2.0 / zoom;
+        properties.height = 4.0 / zoom;
         properties.width = properties.aspect * properties.height;
 
         // Clear Screen

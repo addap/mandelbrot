@@ -8,7 +8,7 @@
 const char* vertexShaderSourceFile_cpu = "Shaders/vertex-shader-with-tex.glsl";
 const char* vertexShaderSourceFile_gpu = "Shaders/vertex-shader-id.glsl";
 const char* fragmentShaderSourceFile_cpu = "Shaders/fragment-border.glsl";
-const char* fragmentShaderSourceFile_gpu = "Shaders/escape-algorithm-optimized.glsl";
+const char* fragmentShaderSourceFile_gpu = "Shaders/escape-algorithm-colors.glsl";
 
 const char* readFile(const char *file_url) {
 //    char buf[1024];
